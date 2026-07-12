@@ -1,0 +1,55 @@
+/* Ring Roads color system — blue & white.
+   Reinterprets the original green/gold app into a professional blue palette. */
+:root {
+  /* Blue ramp — brand core */
+  --blue-900: #0a2a4e; /* deepest — headers on dark, text on tint */
+  --blue-800: #0d3a6b;
+  --blue-700: #0f4c81; /* PRIMARY — headers, key surfaces, brand */
+  --blue-600: #1560a3;
+  --blue-500: #2e7cd6; /* accent / interactive */
+  --blue-400: #5a9be0;
+  --blue-300: #8fbdea;
+  --blue-200: #bcd8f2;
+  --blue-100: #ddeafa;
+  --blue-50:  #eef5fc; /* tint background */
+
+  /* Neutrals */
+  --white:    #ffffff;
+  --gray-50:  #f5f8fc; /* app background */
+  --gray-100: #edf1f7;
+  --gray-200: #e1e8f0; /* borders */
+  --gray-300: #cbd5e1;
+  --gray-500: #5b6b7f; /* muted / secondary text */
+  --gray-700: #33414f;
+  --gray-900: #1a2433; /* primary body text */
+
+  /* Semantic — property status & feedback */
+  --success:     #16a34a; /* Available / متاح */
+  --success-bg:  #dcfce7;
+  --error:       #dc2626; /* Sold / مباع */
+  --error-bg:    #fee2e2;
+  --warning:     #d97706; /* Rented / other / مؤجر */
+  --warning-bg:  #fef3c7;
+
+  /* ---- Semantic aliases (use these in components) ---- */
+  --brand:            var(--blue-700);
+  --brand-strong:     var(--blue-900);
+  --brand-accent:     var(--blue-500);
+
+  --surface-app:      var(--gray-50);
+  --surface-card:     var(--white);
+  --surface-tint:     var(--blue-50);
+  --surface-invert:   var(--blue-700);
+
+  --text-heading:     var(--blue-700);
+  --text-body:        var(--gray-900);
+  --text-muted:       var(--gray-500);
+  --text-on-brand:    var(--white);
+  --text-accent:      var(--blue-500);
+
+  --border-default:   var(--gray-200);
+  --border-strong:    var(--gray-300);
+  --border-accent:    var(--blue-500);
+
+  --focus-ring:       var(--blue-400);
+}

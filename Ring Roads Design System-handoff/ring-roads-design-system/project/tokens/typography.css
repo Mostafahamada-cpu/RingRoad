@@ -1,0 +1,28 @@
+/* Ring Roads type scale. Mirrors the mobile app's sizes (28 titles,
+   16 section, 13-14 body, 11-12 labels) as rem-based tokens. */
+:root {
+  /* Font sizes */
+  --text-display: 28px; /* screen titles: "Ring Roads", "حساب العمولات" */
+  --text-h1:      22px;
+  --text-h2:      18px; /* result totals */
+  --text-h3:      16px; /* section titles */
+  --text-body:    14px; /* default body / inputs */
+  --text-sm:      13px; /* secondary body, addresses */
+  --text-xs:      12px; /* labels */
+  --text-2xs:     11px; /* badge text, stat labels */
+
+  /* Weights */
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+  --weight-extra:    800;
+
+  /* Line heights */
+  --leading-tight: 1.2;
+  --leading-snug:  1.35;
+  --leading-normal: 1.55;
+
+  /* Letter spacing */
+  --tracking-label: 0.02em;
+}

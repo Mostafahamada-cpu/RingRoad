@@ -1,0 +1,80 @@
+<!-- @dsCard group="Mobile App" viewport="430x600" name="Ring Roads App" subtitle="Bilingual property dashboard + commission calculator" -->
+<!-- @startingPoint section="Mobile App" subtitle="Full bilingual real-estate app screen" viewport="430x820" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ring Roads — Mobile App</title>
+<link rel="stylesheet" href="../../styles.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--gray-100); font-family: var(--font-sans); display: flex; justify-content: center; padding: 24px; }
+  .phone {
+    width: 390px; height: 800px; background: var(--surface-app);
+    border-radius: 40px; overflow: hidden; position: relative;
+    box-shadow: var(--shadow-lg); border: 10px solid #10233b; display: flex; flex-direction: column;
+  }
+  .statusbar { height: 30px; background: var(--brand-strong); color: #fff; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 22px; font-size: 12px; font-weight: 600; }
+  .appheader { background: var(--brand); color: #fff; padding: 16px 18px 18px;
+    border-bottom-left-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); }
+  .htop { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 8px; font-size: var(--text-display); font-weight: 800; letter-spacing: -0.01em; }
+  .subtitle { font-size: var(--text-sm); color: var(--blue-200); margin-top: 4px; }
+  .langtoggle { display: flex; gap: 2px; background: rgba(255,255,255,0.15); border-radius: var(--radius-pill); padding: 3px; }
+  .langtoggle button { border: none; background: transparent; color: #fff; font-family: var(--font-sans);
+    font-weight: 700; font-size: 12px; padding: 5px 12px; border-radius: var(--radius-pill); cursor: pointer; }
+  .langtoggle button.on { background: #fff; color: var(--brand); }
+  .scroll { flex: 1; overflow-y: auto; }
+  .scroll::-webkit-scrollbar { width: 0; }
+  .tabwrap { flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<script src="data.js"></script>
+<script type="text/babel" src="Dashboard.jsx"></script>
+<script type="text/babel" src="Commission.jsx"></script>
+<script type="text/babel">
+  const { TabBar } = window.RingRoadsDesignSystem_ef90d6;
+  function App() {
+    const [lang, setLang] = React.useState('en');
+    const [tab, setTab] = React.useState('dashboard');
+    const L = window.RR_DATA.t[lang];
+    const sub = tab === 'dashboard' ? L.subtitleDash : L.subtitleComm;
+    return (
+      <div className="phone" dir={L.dir}>
+        <div className="statusbar"><span>9:41</span><span>Ring Roads · رينج رودز</span></div>
+        <div className="appheader">
+          <div className="htop">
+            <div>
+              <div className="brand"><span aria-hidden="true">🏢</span> {L.brand}</div>
+              <div className="subtitle">{sub}</div>
+            </div>
+            <div className="langtoggle" dir="ltr">
+              <button className={lang === 'en' ? 'on' : ''} onClick={() => setLang('en')}>EN</button>
+              <button className={lang === 'ar' ? 'on' : ''} onClick={() => setLang('ar')}>ع</button>
+            </div>
+          </div>
+        </div>
+        <div className="scroll">
+          {tab === 'dashboard' ? <window.Dashboard lang={lang} /> : <window.Commission lang={lang} />}
+        </div>
+        <div className="tabwrap">
+          <TabBar activeId={tab} onChange={setTab} dir={L.dir} tabs={[
+            { id: 'dashboard', label: L.dashboard, icon: '📊' },
+            { id: 'commission', label: L.commission, icon: '💰' },
+          ]} />
+        </div>
+      </div>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

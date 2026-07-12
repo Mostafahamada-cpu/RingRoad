@@ -1,0 +1,3172 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+     Ring Roads — Bilingual (EN/AR) real-estate broker CRM.
+     Single-file app: HTML structure + CSS (custom properties) + vanilla JS.
+     Backend: Supabase (Auth via GoTrue REST + data via PostgREST), fetch() only.
+     Only third-party lib: html2canvas (CDN) for the quote PNG export.
+     No build step, no bundler, no framework. Open in a browser and it works.
+
+     Modules: Dashboard · Properties · Clients CRM · Follow-ups · Deals pipeline
+              Commission calculator · Commission history (CSV/PDF) · Analytics
+              AI property matching · Dark/light mode
+     Database schema: see SETUP.md. Architecture & flows: see ARCHITECTURE.md.
+     ========================================================================= -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f4c81">
+  <title>Ring Roads</title>
+
+  <!-- 1. FONTS (Cairo — single family carrying Latin + Arabic) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- html2canvas — quote PNG export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+  /* ===================================================================== */
+  /* 2.1  DESIGN TOKENS                                                     */
+  /* ===================================================================== */
+  :root {
+    --font-sans: "Cairo", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-arabic: "Cairo", "Segoe UI", Tahoma, sans-serif;
+
+    --blue-900:#0a2a4e; --blue-800:#0d3a6b; --blue-700:#0f4c81; --blue-600:#1560a3;
+    --blue-500:#2e7cd6; --blue-400:#5a9be0; --blue-300:#8fbdea; --blue-200:#bcd8f2;
+    --blue-100:#ddeafa; --blue-50:#eef5fc;
+    --white:#ffffff;
+    --gray-50:#f5f8fc; --gray-100:#edf1f7; --gray-200:#e1e8f0; --gray-300:#cbd5e1;
+    --gray-500:#5b6b7f; --gray-700:#33414f; --gray-900:#1a2433;
+    --success:#16a34a; --success-bg:#dcfce7;
+    --error:#dc2626;   --error-bg:#fee2e2;
+    --warning:#d97706; --warning-bg:#fef3c7;
+
+    --brand: var(--blue-700); --brand-strong: var(--blue-900); --brand-accent: var(--blue-500);
+    --surface-app: var(--gray-50); --surface-card: var(--white);
+    --surface-tint: var(--blue-50); --surface-invert: var(--blue-700);
+    --surface-sunken: var(--gray-100);
+    --text-heading: var(--blue-700); --text-body-color: var(--gray-900);
+    --text-muted: var(--gray-500); --text-on-brand: var(--white); --text-accent: var(--blue-500);
+    --border-default: var(--gray-200); --border-strong: var(--gray-300); --border-accent: var(--blue-500);
+    --focus-ring: var(--blue-400);
+
+    --chart-bar:#2e7cd6; --chart-bar-soft:#ddeafa;
+
+    --text-display:28px; --text-h1:22px; --text-h2:18px; --text-h3:16px;
+    --text-body:14px; --text-sm:13px; --text-xs:12px; --text-2xs:11px;
+    --weight-regular:400; --weight-medium:500; --weight-semibold:600; --weight-bold:700; --weight-extra:800;
+    --leading-tight:1.2; --leading-snug:1.35; --leading-normal:1.55; --tracking-label:0.02em;
+
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px;
+    --space-6:24px; --space-8:32px; --space-10:40px;
+    --radius-xs:6px; --radius-sm:8px; --radius-md:12px; --radius-lg:16px; --radius-pill:999px;
+    --shadow-sm: 0 1px 3px rgba(15,76,129,.08);
+    --shadow-card: 0 2px 6px rgba(15,76,129,.10);
+    --shadow-stat: 0 2px 8px rgba(15,76,129,.12);
+    --shadow-lg: 0 8px 24px rgba(10,42,78,.16);
+  }
+
+  /* Dark theme — semantic tokens only; raw ramps stay untouched so the
+     light-locked quote template keeps its print colors. */
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-app:#0b1524; --surface-card:#13243a; --surface-tint:#1b3252;
+    --surface-sunken:#0e1c30;
+    --text-heading:#9cc3ee; --text-body-color:#dce8f5; --text-muted:#8ea3bb;
+    --border-default:#223853; --border-strong:#2e4a6b;
+    --success:#4ade80; --success-bg:rgba(34,197,94,.16);
+    --error:#f87171;   --error-bg:rgba(239,68,68,.16);
+    --warning:#fbbf24; --warning-bg:rgba(245,158,11,.18);
+    --focus-ring:#5a9be0;
+    --chart-bar:#5093de; --chart-bar-soft:#28405e; /* validated vs #13243a card surface */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.40);
+    --shadow-card: 0 2px 8px rgba(0,0,0,.45);
+    --shadow-stat: 0 2px 8px rgba(0,0,0,.50);
+    --shadow-lg: 0 8px 28px rgba(0,0,0,.60);
+  }
+
+  /* ===================================================================== */
+  /* 2.2  RESET & BASE                                                     */
+  /* ===================================================================== */
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--text-body-color);
+    background: var(--surface-app);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  button { font-family: inherit; }
+  input, select, textarea { font-family: inherit; }
+  a { color: var(--brand-accent); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
+
+  /* ===================================================================== */
+  /* 2.3  APP SHELL / LAYOUT                                                */
+  /* ===================================================================== */
+  #app-root { min-height: 100%; display: flex; flex-direction: column; }
+
+  .shell {
+    width: 100%;
+    max-width: 480px;
+    margin-inline: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-app);
+    position: relative;
+  }
+  .shell__header {
+    background: var(--brand);
+    color: var(--text-on-brand);
+    padding: var(--space-4) var(--space-4) var(--space-5);
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+    position: sticky; top: 0; z-index: 20;
+  }
+  .htop { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+  .brand {
+    display: flex; align-items: center; gap: var(--space-2);
+    font-size: var(--text-h1); font-weight: var(--weight-extra); letter-spacing: -0.01em;
+    line-height: var(--leading-tight);
+  }
+  .brand .brand__glyph { font-size: 0.9em; }
+  .subtitle { font-size: var(--text-sm); color: var(--blue-200); margin-top: 2px; }
+
+  .header-actions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+  .langtoggle {
+    display: flex; gap: 2px; background: rgba(255,255,255,0.15);
+    border-radius: var(--radius-pill); padding: 3px;
+  }
+  .langtoggle button {
+    border: none; background: transparent; color: #fff; font-weight: var(--weight-bold);
+    font-size: var(--text-xs); padding: 5px 10px; border-radius: var(--radius-pill);
+    cursor: pointer; transition: background .15s ease, color .15s ease;
+  }
+  .langtoggle button.on { background: #fff; color: var(--brand); }
+  .icon-btn {
+    border: none; background: rgba(255,255,255,0.15); color: #fff;
+    width: 34px; height: 34px; border-radius: var(--radius-pill); cursor: pointer;
+    font-size: var(--text-body); display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s ease;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.28); }
+
+  .shell__scroll { flex: 1; overflow-y: auto; padding-bottom: 96px; }
+  .screen { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-4); animation: fadeUp .22s ease both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .tabwrap {
+    position: sticky; bottom: 0; z-index: 20;
+    background: var(--surface-card); border-top: 1px solid var(--border-default);
+  }
+
+  /* ===================================================================== */
+  /* 2.4  COMPONENTS                                                        */
+  /* ===================================================================== */
+
+  /* --- Button --- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+    font-family: var(--font-sans); font-weight: var(--weight-semibold);
+    border-radius: var(--radius-sm); cursor: pointer;
+    border: 1px solid transparent; padding: 12px 18px; font-size: var(--text-body);
+    transition: filter .15s ease, transform .05s ease, background .15s ease, color .15s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn--primary   { background: var(--brand); color: var(--text-on-brand); border-color: var(--brand); }
+  .btn--primary:hover:not(:disabled)   { filter: brightness(1.08); }
+  .btn--secondary { background: var(--surface-tint); color: var(--text-heading); border-color: transparent; }
+  .btn--secondary:hover:not(:disabled) { filter: brightness(0.97); }
+  .btn--ghost     { background: transparent; color: var(--brand-accent); }
+  .btn--ghost:hover:not(:disabled)     { background: var(--surface-tint); }
+  .btn--danger    { background: transparent; color: var(--error); border-color: transparent; }
+  .btn--danger:hover:not(:disabled)    { background: var(--error-bg); }
+  .btn--sm { padding: 8px 14px; font-size: var(--text-sm); }
+  .btn--lg { padding: 14px 22px; font-size: var(--text-h3); }
+  .btn--block { width: 100%; }
+  .btn__icon { font-size: 1.1em; line-height: 1; }
+
+  /* --- Input --- */
+  .field { display: block; }
+  .field__label {
+    display: block; font-size: var(--text-sm); font-weight: var(--weight-semibold);
+    color: var(--text-body-color); margin-bottom: var(--space-2);
+  }
+  .field__wrap { position: relative; display: flex; align-items: center; }
+  .field__input, .field__select, .field__textarea {
+    width: 100%; font-family: var(--font-sans); font-size: var(--text-body);
+    color: var(--text-body-color); background: var(--surface-app);
+    border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+    padding: 10px 12px; outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field__textarea { resize: vertical; min-height: 64px; }
+  .field__input:focus, .field__select:focus, .field__textarea:focus {
+    border-color: var(--border-accent); box-shadow: 0 0 0 3px var(--chart-bar-soft);
+  }
+  .field__wrap--suffix .field__input { padding-inline-end: 42px; }
+  .field__suffix {
+    position: absolute; inset-inline-end: 12px; font-size: var(--text-sm);
+    font-weight: var(--weight-semibold); color: var(--text-muted); pointer-events: none;
+  }
+
+  /* --- Segmented control --- */
+  .segmented { display: inline-flex; background: var(--surface-app);
+    border: 1px solid var(--border-default); border-radius: var(--radius-sm); padding: 3px; gap: 3px; }
+  .segmented button {
+    border: none; background: transparent; cursor: pointer; padding: 7px 16px;
+    border-radius: var(--radius-xs); font-size: var(--text-sm); font-weight: var(--weight-semibold);
+    color: var(--text-muted); transition: background .15s ease, color .15s ease;
+  }
+  .segmented button.on { background: var(--brand); color: #fff; }
+
+  /* --- TabBar (5 tabs, icon over label) --- */
+  .tabbar { display: flex; gap: 4px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
+  .tabbar__tab {
+    flex: 1; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    padding: 8px 2px; border-radius: var(--radius-sm); border: none; cursor: pointer;
+    font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+    background: transparent; color: var(--text-muted);
+    transition: background .15s ease, color .15s ease;
+  }
+  .tabbar__tab .ticon { font-size: 18px; line-height: 1; }
+  .tabbar__tab.on { background: var(--brand); color: var(--text-on-brand); }
+
+  /* --- Panel --- */
+  .panel {
+    background: var(--surface-card); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card); padding: var(--space-4);
+    border-inline-start: 4px solid var(--border-accent);
+  }
+  .panel--brand   { border-inline-start-color: var(--brand); }
+  .panel--success { border-inline-start-color: var(--success); }
+  .panel--warning { border-inline-start-color: var(--warning); }
+  .panel__title {
+    margin: 0 0 var(--space-4); font-size: var(--text-h3);
+    font-weight: var(--weight-semibold); color: var(--text-heading);
+  }
+  .panel__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-bottom: var(--space-4); }
+  .panel__head .panel__title { margin: 0; }
+  .panel__more { border: none; background: none; color: var(--brand-accent); font-weight: var(--weight-semibold); font-size: var(--text-xs); cursor: pointer; }
+
+  /* --- StatCard --- */
+  .statrow { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+  .statrow--4 { grid-template-columns: repeat(4, 1fr); }
+  .statcard {
+    background: var(--surface-card); border-radius: var(--radius-md);
+    box-shadow: var(--shadow-stat); padding: var(--space-3); text-align: center;
+    border-inline-start: 4px solid var(--border-accent); min-width: 0;
+  }
+  .statcard__value {
+    font-size: var(--text-h1); font-weight: var(--weight-bold); color: var(--text-heading);
+    margin-bottom: var(--space-1); line-height: var(--leading-tight); overflow: hidden; text-overflow: ellipsis;
+  }
+  .statcard__label { font-size: var(--text-xs); color: var(--text-muted); line-height: var(--leading-snug); }
+  .statcard--success { border-inline-start-color: var(--success); }
+  .statcard--success .statcard__value { color: var(--success); }
+  .statcard--warning { border-inline-start-color: var(--warning); }
+
+  /* --- Chips (filters) --- */
+  .chips { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    border: 1px solid var(--border-default); background: var(--surface-card); color: var(--text-muted);
+    border-radius: var(--radius-pill); padding: 6px 12px; font-size: var(--text-xs);
+    font-weight: var(--weight-semibold); cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    transition: background .15s ease, color .15s ease;
+  }
+  .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .chip .cnt { opacity: .72; margin-inline-start: 4px; }
+
+  /* --- PropertyCard --- */
+  .plist { display: flex; flex-direction: column; gap: var(--space-3); }
+  .pcard {
+    background: var(--surface-card); border-radius: var(--radius-md);
+    border: 1px solid var(--border-default); box-shadow: var(--shadow-card); overflow: hidden;
+    transition: border-color .15s ease;
+  }
+  .pcard.is-open { border-color: var(--border-accent); }
+  .pcard__header {
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+    padding: var(--space-4); background: transparent; border: none;
+    border-bottom: 1px solid var(--border-default); cursor: pointer;
+    text-align: start; color: inherit;
+  }
+  .pcard__id { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+  .pcard__icon { font-size: 28px; line-height: 1; }
+  .pcard__code { display: block; font-size: var(--text-body); font-weight: var(--weight-semibold); color: var(--text-heading); }
+  .pcard__addr { display: block; font-size: var(--text-sm); color: var(--text-muted); }
+  .pcard__meta { text-align: end; flex-shrink: 0; }
+  .pcard__price { display: block; font-size: var(--text-sm); font-weight: var(--weight-bold); color: var(--text-heading); margin-bottom: var(--space-1); }
+  .pcard__quick { display: flex; padding: var(--space-3) var(--space-4); background: var(--surface-app); border-bottom: 1px solid var(--border-default); }
+  .pcard__quick > div { flex: 1; text-align: center; min-width: 0; }
+  .quick__k { font-size: var(--text-2xs); color: var(--text-muted); margin-bottom: 2px; }
+  .quick__v { font-size: var(--text-body); font-weight: var(--weight-semibold); color: var(--text-heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pcard__details { padding: var(--space-2) var(--space-4) var(--space-3); background: var(--surface-app); }
+  .drow { display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) 0; border-bottom: 1px solid var(--border-default); }
+  .drow:last-child { border-bottom: none; }
+  .drow__k { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-muted); flex-shrink: 0; }
+  .drow__v { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-heading); text-align: end; overflow-wrap: anywhere; }
+  .pcard__actions { display: flex; gap: var(--space-2); padding: var(--space-3) var(--space-4) var(--space-4); background: var(--surface-app); flex-wrap: wrap; }
+
+  /* --- Gallery + lightbox --- */
+  .gallery { display: flex; gap: var(--space-2); overflow-x: auto; padding: var(--space-2) 0; }
+  .gallery img {
+    height: 76px; width: 110px; object-fit: cover; flex-shrink: 0;
+    border-radius: var(--radius-sm); cursor: pointer; border: 1px solid var(--border-default);
+  }
+  .lightbox {
+    position: fixed; inset: 0; z-index: 80; background: rgba(4,14,26,.85);
+    display: flex; align-items: center; justify-content: center; padding: var(--space-4); cursor: zoom-out;
+  }
+  .lightbox img { max-width: 100%; max-height: 90vh; border-radius: var(--radius-md); }
+
+  /* --- StatusBadge --- */
+  .badge {
+    display: inline-block; font-size: var(--text-2xs); font-weight: var(--weight-semibold);
+    padding: 4px 8px; border-radius: var(--radius-xs); line-height: 1; white-space: nowrap;
+  }
+  .badge--available { color: var(--success); background: var(--success-bg); }
+  .badge--reserved  { color: var(--warning); background: var(--warning-bg); }
+  .badge--sold      { color: var(--error);   background: var(--error-bg); }
+  .badge--rented    { color: var(--text-muted); background: var(--surface-tint); }
+
+  /* --- Stage chip (client / deal stages) --- */
+  .stagechip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-2xs);
+    font-weight: var(--weight-semibold); background: var(--surface-tint); color: var(--text-heading);
+    padding: 4px 10px; border-radius: var(--radius-pill); white-space: nowrap;
+  }
+  .stagechip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--stage-c, var(--blue-500)); flex-shrink: 0; }
+
+  /* --- Avatar --- */
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%; background: var(--surface-tint); color: var(--text-heading);
+    font-weight: var(--weight-extra); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: var(--text-h3);
+  }
+
+  /* --- Follow-up row --- */
+  .fugroup { display: flex; flex-direction: column; gap: var(--space-2); }
+  .fugroup__title { font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: var(--tracking-label); margin: var(--space-2) 0 0; }
+  .furow {
+    display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3);
+    background: var(--surface-card); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+    border-inline-start: 4px solid var(--border-accent);
+  }
+  .furow.is-late { border-inline-start-color: var(--error); }
+  .furow.is-done { opacity: .55; border-inline-start-color: var(--success); }
+  .fucheck {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border-strong);
+    background: transparent; cursor: pointer; flex-shrink: 0; margin-top: 2px;
+    display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; line-height: 1;
+  }
+  .furow.is-done .fucheck { background: var(--success); border-color: var(--success); }
+  .furow__body { flex: 1; min-width: 0; }
+  .furow__title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-body-color); }
+  .furow__meta { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; display: flex; gap: var(--space-2); flex-wrap: wrap; }
+  .furow__edit { border: none; background: none; cursor: pointer; color: var(--text-muted); font-size: var(--text-body); padding: 2px; }
+
+  /* --- Kanban --- */
+  .kanban {
+    display: flex; gap: var(--space-3); overflow-x: auto;
+    margin-inline: calc(-1 * var(--space-4)); padding: 0 var(--space-4) var(--space-3);
+    scroll-snap-type: x proximity;
+  }
+  .kcol {
+    flex: 0 0 252px; scroll-snap-align: start; background: var(--surface-sunken);
+    border-radius: var(--radius-md); padding: var(--space-2);
+    display: flex; flex-direction: column; gap: var(--space-2); max-height: 62vh;
+  }
+  .kcol__head {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) 0; font-size: var(--text-xs); font-weight: var(--weight-bold);
+    color: var(--text-heading);
+  }
+  .kcol__count { background: var(--surface-card); color: var(--text-muted); border-radius: var(--radius-pill);
+    padding: 2px 8px; font-size: var(--text-2xs); font-weight: var(--weight-bold); }
+  .kcol__sum { padding: 0 var(--space-2) var(--space-1); font-size: var(--text-2xs); color: var(--text-muted); }
+  .kcol__cards { overflow-y: auto; display: flex; flex-direction: column; gap: var(--space-2); min-height: 40px; }
+  .kcard {
+    background: var(--surface-card); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+    padding: var(--space-3); border-inline-start: 3px solid var(--stage-c, var(--border-accent));
+    transition: transform .15s ease, box-shadow .15s ease;
+  }
+  .kcard:hover { transform: translateY(-1px); box-shadow: var(--shadow-card); }
+  .kcard__name { font-weight: var(--weight-semibold); font-size: var(--text-sm); color: var(--text-heading); cursor: pointer; }
+  .kcard__sub { font-size: var(--text-xs); color: var(--text-muted); margin: 2px 0 8px; }
+  .kcard__row { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+  .kcard__val { font-weight: var(--weight-bold); font-size: var(--text-sm); color: var(--text-heading); }
+  .kmove { display: flex; gap: 4px; }
+  .kmove button {
+    border: none; background: var(--surface-tint); color: var(--text-heading);
+    width: 28px; height: 28px; border-radius: var(--radius-xs); cursor: pointer; font-size: 12px;
+  }
+  .kmove button:disabled { opacity: .3; cursor: default; }
+
+  /* --- Horizontal bar list (rankings / revenue) --- */
+  .hbar { display: flex; flex-direction: column; gap: var(--space-3); }
+  .hbar__row { display: grid; grid-template-columns: minmax(76px, 34%) 1fr auto; gap: var(--space-2); align-items: center; }
+  .hbar__label { font-size: var(--text-xs); color: var(--text-body-color); font-weight: var(--weight-semibold);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hbar__track { height: 10px; background: var(--surface-sunken); border-radius: var(--radius-pill); overflow: hidden; }
+  .hbar__fill { height: 100%; background: var(--chart-bar); border-radius: var(--radius-pill); transition: width .4s ease; }
+  .hbar__val { font-size: var(--text-xs); font-weight: var(--weight-bold); color: var(--text-heading); }
+
+  /* --- SVG chart --- */
+  .chartbox { width: 100%; }
+  .cbar { cursor: pointer; transition: filter .15s ease; }
+  .cbar:hover { filter: brightness(1.14); }
+  .cval { font-size: 10px; font-weight: 700; fill: var(--text-heading); }
+  .clab { font-size: 9px; fill: var(--text-muted); }
+  .charttip {
+    position: fixed; z-index: 70; background: #0d2036; color: #fff; pointer-events: none;
+    padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 600;
+    opacity: 0; transition: opacity .12s ease; max-width: 240px; box-shadow: var(--shadow-lg);
+  }
+  .charttip.on { opacity: 1; }
+
+  /* --- More menu --- */
+  .menu { display: flex; flex-direction: column; gap: var(--space-3); }
+  .menuitem {
+    display: flex; align-items: center; gap: var(--space-3); background: var(--surface-card);
+    border: none; border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+    padding: var(--space-4); cursor: pointer; text-align: start; width: 100%;
+    border-inline-start: 4px solid var(--border-accent); color: inherit;
+    transition: transform .15s ease;
+  }
+  .menuitem:hover { transform: translateY(-1px); }
+  .menuitem__ic { font-size: 24px; line-height: 1; }
+  .menuitem__tx { flex: 1; min-width: 0; }
+  .menuitem__t { font-size: var(--text-h3); font-weight: var(--weight-semibold); color: var(--text-heading); }
+  .menuitem__d { font-size: var(--text-xs); color: var(--text-muted); }
+  .menuitem__badge {
+    background: var(--error); color: #fff; font-size: var(--text-2xs); font-weight: var(--weight-bold);
+    border-radius: var(--radius-pill); padding: 3px 8px; flex-shrink: 0;
+  }
+  .backchip {
+    align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; border: none;
+    background: var(--surface-tint); color: var(--text-heading); font-weight: var(--weight-semibold);
+    font-size: var(--text-xs); padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer;
+  }
+
+  /* --- Commission result rows --- */
+  .crow {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+    padding: var(--space-3) 0; border-bottom: 1px solid var(--border-default);
+  }
+  .crow__label { flex: 1; font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-body-color); }
+  .crow__pct { font-size: var(--text-xs); font-weight: var(--weight-semibold); color: var(--text-accent); min-width: 40px; text-align: end; }
+  .crow__amt { font-size: var(--text-body); font-weight: var(--weight-semibold); color: var(--text-heading); min-width: 110px; text-align: end; }
+  .crow--subtotal {
+    display: block; background: var(--surface-app); border-radius: var(--radius-sm);
+    padding: var(--space-3); border-inline-start: 4px solid var(--border-accent); border-bottom: none;
+  }
+  .crow--subtotal .st__k { font-size: var(--text-xs); color: var(--text-muted); margin-bottom: var(--space-1); }
+  .crow--subtotal .st__v { font-size: var(--text-h2); font-weight: var(--weight-bold); color: var(--text-heading); }
+  .crow--total {
+    display: block; background: var(--brand); border-radius: var(--radius-sm);
+    padding: var(--space-4); border-bottom: none;
+  }
+  .crow--total .tt__k { font-size: var(--text-xs); color: var(--blue-200); margin-bottom: var(--space-2); }
+  .crow--total .tt__v { font-size: var(--text-display); font-weight: var(--weight-bold); color: var(--text-on-brand); }
+
+  /* --- History rows --- */
+  .hlist { display: flex; flex-direction: column; gap: var(--space-2); }
+  .hrow {
+    background: var(--surface-card); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);
+    padding: var(--space-3) var(--space-4); border-inline-start: 4px solid var(--success);
+  }
+  .hrow__top { display: flex; justify-content: space-between; gap: var(--space-2); align-items: baseline; }
+  .hrow__name { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-heading); }
+  .hrow__date { font-size: var(--text-2xs); color: var(--text-muted); flex-shrink: 0; }
+  .hrow__grid { display: flex; gap: var(--space-3); margin-top: var(--space-2); flex-wrap: wrap; }
+  .hrow__grid > div { flex: 1; min-width: 90px; }
+  .hcell__k { font-size: var(--text-2xs); color: var(--text-muted); }
+  .hcell__v { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-heading); white-space: nowrap; }
+
+  /* --- AI match cards --- */
+  .match {
+    background: var(--surface-app); border-radius: var(--radius-sm); padding: var(--space-3);
+    border-inline-start: 3px solid var(--brand-accent); margin-bottom: var(--space-2);
+  }
+  .match__top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); }
+  .match__name { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--text-heading); }
+  .match__pct { font-weight: var(--weight-extra); color: var(--success); font-size: var(--text-sm); flex-shrink: 0; }
+  .match__sub { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+  .reasons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: var(--space-2); }
+  .reason { font-size: var(--text-2xs); background: var(--surface-tint); color: var(--text-heading);
+    border-radius: var(--radius-pill); padding: 3px 8px; font-weight: var(--weight-semibold); }
+
+  /* --- Banners / toast / empty --- */
+  .banner { font-size: var(--text-sm); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .banner--error { color: var(--error); background: var(--error-bg); }
+  .banner--info  { color: var(--text-heading); background: var(--surface-tint); }
+  .banner--warning { color: var(--warning); background: var(--warning-bg); }
+  .toast {
+    position: fixed; inset-block-end: 96px; inset-inline: 0; margin-inline: auto; width: max-content; max-width: 90%;
+    background: #0d2036; color: #fff; font-size: var(--text-sm); padding: 10px 16px;
+    border-radius: var(--radius-pill); box-shadow: var(--shadow-lg); z-index: 90;
+    opacity: 0; transform: translateY(8px); transition: opacity .2s ease, transform .2s ease; pointer-events: none;
+  }
+  .toast.on { opacity: 1; transform: translateY(0); }
+
+  .empty { text-align: center; color: var(--text-muted); padding: var(--space-8) var(--space-4); font-size: var(--text-sm); }
+  .spinner {
+    width: 22px; height: 22px; border: 3px solid var(--chart-bar-soft); border-top-color: var(--brand-accent);
+    border-radius: 50%; animation: spin .7s linear infinite; margin: var(--space-8) auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===================================================================== */
+  /* 2.5  AUTH SCREEN                                                       */
+  /* ===================================================================== */
+  .auth {
+    min-height: 100vh; min-height: 100dvh; display: flex; align-items: center; justify-content: center;
+    padding: var(--space-6); background: var(--surface-app);
+  }
+  .auth__card {
+    width: 100%; max-width: 400px; background: var(--surface-card);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+    border-inline-start: 4px solid var(--brand-accent); padding: var(--space-6);
+  }
+  .auth__brand { display: flex; align-items: center; gap: var(--space-2);
+    font-size: var(--text-h1); font-weight: var(--weight-extra); color: var(--text-heading); }
+  .auth__tagline { font-size: var(--text-sm); color: var(--text-muted); margin: var(--space-1) 0 var(--space-6); }
+  .auth__form { display: flex; flex-direction: column; gap: var(--space-4); }
+  .auth__switch { font-size: var(--text-sm); color: var(--text-muted); text-align: center; margin-top: var(--space-4); }
+  .auth__switch button { border: none; background: none; color: var(--brand-accent); font-weight: var(--weight-semibold); cursor: pointer; font-size: inherit; }
+
+  /* ===================================================================== */
+  /* 2.6  MODAL / OVERLAY                                                   */
+  /* ===================================================================== */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(10,42,78,.45); z-index: 50;
+    display: flex; align-items: flex-end; justify-content: center; padding: 0;
+  }
+  html[data-theme="dark"] .overlay { background: rgba(2,10,20,.62); }
+  .modal {
+    width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto;
+    background: var(--surface-card); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    box-shadow: var(--shadow-lg); padding: var(--space-5); border-inline-start: 4px solid var(--brand-accent);
+    animation: slideUp .25s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @keyframes slideUp { from { transform: translateY(28px); opacity: .5; } to { transform: none; opacity: 1; } }
+  .modal__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); }
+  .modal__title { margin: 0; font-size: var(--text-h2); font-weight: var(--weight-bold); color: var(--text-heading); }
+  .modal__close { border: none; background: var(--surface-app); border-radius: var(--radius-pill);
+    width: 32px; height: 32px; cursor: pointer; font-size: var(--text-h3); color: var(--text-muted); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+  .form-grid .col-2 { grid-column: 1 / -1; }
+  .form-actions { display: flex; gap: var(--space-3); margin-top: var(--space-5); }
+  .form-actions .btn { flex: 1; }
+
+  /* ===================================================================== */
+  /* 2.7  QUOTE TEMPLATE (html2canvas target) — locked to light colors      */
+  /* ===================================================================== */
+  .quote {
+    /* Re-pin semantic tokens so the PNG renders light even in dark mode. */
+    --surface-app:#f5f8fc; --surface-card:#ffffff; --surface-tint:#eef5fc; --surface-sunken:#edf1f7;
+    --text-heading:#0f4c81; --text-body-color:#1a2433; --text-muted:#5b6b7f;
+    --border-default:#e1e8f0; --border-strong:#cbd5e1; --border-accent:#2e7cd6;
+    --success:#16a34a; --success-bg:#dcfce7; --error:#dc2626; --error-bg:#fee2e2;
+    --warning:#d97706; --warning-bg:#fef3c7;
+    width: 680px; background: #fff; padding: 28px; color: var(--gray-900);
+    border-inline-start: 6px solid var(--brand); font-family: var(--font-sans);
+  }
+  .quote__top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px;
+    padding-bottom: 14px; border-bottom: 2px solid var(--gray-200); }
+  .quote__brand { font-size: 24px; font-weight: 800; color: var(--brand); }
+  .quote__date { font-size: 13px; color: var(--gray-500); }
+  .quote__section-title { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--brand-accent); margin: 18px 0 10px; }
+  .quote__prop { display: flex; gap: 14px; align-items: center; }
+  .quote__prop-icon { font-size: 40px; }
+  .quote__prop-code { font-size: 18px; font-weight: 700; color: var(--brand); }
+  .quote__prop-addr { font-size: 13px; color: var(--gray-700); }
+  .quote__prop-price { margin-inline-start: auto; text-align: end; }
+  .quote__prop-price .p { font-size: 18px; font-weight: 700; color: var(--brand); }
+  .quote__quick { display: flex; gap: 10px; margin-top: 14px; }
+  .quote__quick > div { flex: 1; background: var(--surface-app); border-radius: 10px; padding: 10px; text-align: center; }
+  .quote__quick .k { font-size: 11px; color: var(--gray-500); }
+  .quote__quick .v { font-size: 14px; font-weight: 700; color: var(--brand); }
+  .quote__foot { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--gray-200);
+    font-size: 12px; color: var(--gray-500); display: flex; justify-content: space-between; }
+  .quote-stage { position: fixed; inset-inline-start: -10000px; top: 0; z-index: -1; }
+
+  /* --- FAB --- */
+  .fab {
+    position: fixed; inset-block-end: 96px; inset-inline-end: max(var(--space-4), calc(50vw - 240px + var(--space-4)));
+    width: 56px; height: 56px; border-radius: var(--radius-pill); border: none;
+    background: var(--brand); color: #fff; font-size: 28px; line-height: 1; cursor: pointer;
+    box-shadow: var(--shadow-lg); z-index: 30;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: filter .15s ease, transform .05s ease;
+  }
+  .fab:hover { filter: brightness(1.1); }
+  .fab:active { transform: scale(0.96); }
+
+  /* ===================================================================== */
+  /* 2.8  RESPONSIVE                                                        */
+  /* ===================================================================== */
+  @media (min-width: 768px) {
+    .shell { max-width: 720px; box-shadow: var(--shadow-lg); }
+    .fab { inset-inline-end: max(var(--space-6), calc(50vw - 360px + var(--space-4))); }
+    .overlay { align-items: center; padding: var(--space-4); }
+    .modal { border-radius: var(--radius-lg); max-width: 540px; }
+    .statrow--4 { grid-template-columns: repeat(4, 1fr); }
+  }
+  @media (max-width: 420px) {
+    .statrow--4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (min-width: 1024px) {
+    .shell { max-width: 960px; }
+    .plist { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); align-items: start; }
+    .fab { inset-inline-end: max(var(--space-6), calc(50vw - 480px + var(--space-4))); }
+    .kcol { flex-basis: 280px; }
+  }
+
+  /* ===================================================================== */
+  /* 2.9  RTL + reduced motion                                             */
+  /* ===================================================================== */
+  [dir="rtl"] { text-align: right; }
+  /* Logical properties handle most mirroring automatically. */
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+  </style>
+</head>
+<body>
+  <div id="app-root"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="charttip" class="charttip" aria-hidden="true"></div>
+  <div id="quote-stage" class="quote-stage" aria-hidden="true"></div>
+
+  <script>
+  "use strict";
+
+  /* ===================================================================== */
+  /* 3.  CONFIG  — your Supabase project values                             */
+  /* ===================================================================== */
+  const SUPABASE_URL      = "https://cbjguowbrbxrthokbmpd.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_H_FVSTN6WJ86vqo9tcPV1Q_pSXRdF68";
+  const REST_URL = SUPABASE_URL + "/rest/v1";
+  const AUTH_URL = SUPABASE_URL + "/auth/v1";
+  const SESSION_KEY = "ringroads_session";
+
+  const CONFIGURED = !SUPABASE_URL.includes("YOUR-PROJECT-REF") && !SUPABASE_ANON_KEY.includes("YOUR-ANON");
+
+  /* ===================================================================== */
+  /* 4.  DOMAIN CONSTANTS                                                   */
+  /* ===================================================================== */
+  const PROPERTY_ICONS = ['🏠','🏢','🏘️','🏙️','🏗️','🌇'];
+  const PROPERTY_STATUSES = ['available','reserved','sold','rented'];
+  const UNIT_TYPES = ['apartment','villa','townhouse','duplex','penthouse','studio','chalet','office','retail'];
+  const CLIENT_STAGES = ['new_lead','contacted','visit_scheduled','negotiating','reservation','contract_signed'];
+  const DEAL_STAGES = ['lead','contacted','visit','negotiation','reservation','closed'];
+  // Stage accent dots: an ordered single-hue progression (blue ramp) with
+  // amber for negotiation-ish middle and green for the win — identity is
+  // always carried by the visible label, never by color alone.
+  const CLIENT_STAGE_COLORS = { new_lead:'#8fbdea', contacted:'#5a9be0', visit_scheduled:'#2e7cd6', negotiating:'#d97706', reservation:'#0f9d58', contract_signed:'#16a34a' };
+  const DEAL_STAGE_COLORS   = { lead:'#8fbdea', contacted:'#5a9be0', visit:'#2e7cd6', negotiation:'#d97706', reservation:'#0f9d58', closed:'#16a34a' };
+  const FU_KINDS = ['call','meeting','visit','other'];
+  const FU_KIND_ICONS = { call:'📞', meeting:'🤝', visit:'📍', other:'📌' };
+
+  /* ===================================================================== */
+  /* 5.  I18N DICTIONARY                                                    */
+  /* ===================================================================== */
+  const I18N = {
+    en: {
+      dir: 'ltr', brand: 'Ring Roads',
+      // navigation
+      navHome: 'Home', navProps: 'Properties', navClients: 'Clients', navDeals: 'Deals', navMore: 'More',
+      subtitleHome: 'Your business at a glance', subtitleProps: 'Property portfolio',
+      subtitleClients: 'Client relationships', subtitleDeals: 'Deals pipeline',
+      subtitleMore: 'Tools & reports', subtitleFollowups: 'Calls, meetings & visits',
+      subtitleCalc: 'Calculate commissions with ease', subtitleHistory: 'Closed-deal commissions',
+      subtitleAnalytics: 'Performance insights',
+      back: 'Back', all: 'All', add: 'Add', close: 'Close', search: 'Search…',
+      theme: 'Theme', viewAll: 'View all', none: 'None', optional: 'optional',
+      // auth
+      signIn: 'Sign in', signUp: 'Sign up', email: 'Email', password: 'Password',
+      logout: 'Log out', tagline: 'Real-estate broker CRM',
+      noAccount: "Don't have an account?", haveAccount: 'Already have an account?',
+      createAccount: 'Create account', welcome: 'Sign in to continue',
+      loginFailed: 'Invalid login credentials', signupFailed: 'Could not create account',
+      checkEmail: 'Account created — check your email to confirm, then sign in.',
+      configHint: 'Add your Supabase URL and anon key in the CONFIG section of index.html.',
+      dbHint: 'A database table is missing — run the SQL in SETUP.md on your Supabase project.',
+      loading: 'Loading…', saved: 'Saved', deleted: 'Deleted', confirm: 'Confirm', cancel: 'Cancel',
+      save: 'Save', edit: 'Edit', del: 'Delete',
+      // dashboard
+      salesThisMonth: 'Sales this month', commThisMonth: 'Commissions this month',
+      activeClients: 'Active clients', bookedVisits: 'Booked visits',
+      monthlySales: 'Monthly sales', topAgents: 'Top performing agents',
+      mostSoldProject: 'Most sold project', todayTasks: "Today's tasks",
+      noTasksToday: 'Nothing due today — enjoy the quiet 🎉',
+      noSalesData: 'No closed deals yet. Close a deal in the pipeline to see sales here.',
+      dealsWord: 'deals', unitsWord: 'units',
+      // properties
+      total: 'Total', available: 'Available', forSale: 'For sale', forRent: 'For rent',
+      beds: 'Beds', baths: 'Baths', type: 'Type', finish: 'Finish', area: 'Area', sqm: 'sqm',
+      unit: 'Unit', agent: 'Agent', registered: 'Registered',
+      sale: 'Sale', rent: 'Rent', month: '/mo', currency: 'EGP',
+      statusAvailable: 'Available', statusReserved: 'Reserved', statusSold: 'Sold', statusRented: 'Rented',
+      addProperty: 'Add property', editProperty: 'Edit property', newProperty: 'New property',
+      code: 'Code', icon: 'Icon', status: 'Status', price: 'Price',
+      confirmDelete: 'Delete this property?',
+      addressEn: 'Address (EN)', addressAr: 'Address (AR)',
+      finishEn: 'Finish (EN)', finishAr: 'Finish (AR)',
+      unitEn: 'Unit (EN)', unitAr: 'Unit (AR)',
+      agentEn: 'Agent (EN)', agentAr: 'Agent (AR)',
+      noProps: 'No properties yet. Tap + to add one.', noResults: 'Nothing matches your search.',
+      project: 'Project', developer: 'Developer', unitType: 'Unit type',
+      delivery: 'Delivery', paymentPlan: 'Payment plan',
+      imagesLabel: 'Image URLs (one per line)', gallery: 'Gallery',
+      mapUrl: 'Google Maps link', openMap: 'Open in Maps',
+      utApartment: 'Apartment', utVilla: 'Villa', utTownhouse: 'Townhouse', utDuplex: 'Duplex',
+      utPenthouse: 'Penthouse', utStudio: 'Studio', utChalet: 'Chalet', utOffice: 'Office', utRetail: 'Retail',
+      // clients
+      addClient: 'Add client', editClient: 'Edit client', newClient: 'New client',
+      clientName: 'Name', phone: 'Phone', budget: 'Budget', prefArea: 'Preferred area',
+      prefType: 'Preferred unit type', notes: 'Notes', stage: 'Stage', client: 'Client',
+      noClients: 'No clients yet. Tap + to add your first lead.',
+      confirmDeleteClient: 'Delete this client?', call: 'Call', whatsapp: 'WhatsApp',
+      stNewLead: 'New lead', stContacted: 'Contacted', stVisit: 'Site visit scheduled',
+      stNegotiating: 'Negotiating', stReservation: 'Reservation', stSigned: 'Contract signed',
+      // deal stages
+      dsLead: 'Lead', dsContacted: 'Contacted', dsVisit: 'Visit',
+      dsNegotiation: 'Negotiation', dsReservation: 'Reservation', dsClosed: 'Closed',
+      // follow-ups
+      followups: 'Follow-ups', followupsDesc: 'Reminders, calls & daily tasks',
+      addFollowup: 'Add follow-up', editFollowup: 'Edit follow-up',
+      fuTitle: 'Task', fuKind: 'Type', kCall: 'Call', kMeeting: 'Meeting', kVisit: 'Site visit', kOther: 'Other',
+      dueDate: 'Date', dueTime: 'Time', overdue: 'Overdue', today: 'Today',
+      upcoming: 'Upcoming', completedGroup: 'Completed', showDone: 'Show completed',
+      noFollowups: 'No follow-ups yet. Tap + to schedule one.',
+      enableNotifs: 'Enable notifications', notifsOn: 'Notifications enabled',
+      notifBlocked: 'Notifications are blocked in your browser settings.',
+      notifUnsupported: 'This browser does not support notifications.',
+      confirmDeleteFu: 'Delete this follow-up?',
+      // calculator
+      calc: 'Commission calculator', calcDesc: 'Split any deal in seconds',
+      propPrice: 'Property price', commPct: 'Commission', agentShare: 'Agent share', companyShare: 'Company share',
+      totalCommission: 'Total commission', agentCommission: 'Agent commission', companyCommission: 'Company commission',
+      pickProperty: 'Pick a property (optional)', inputs: 'Deal inputs', results: 'Results',
+      shareWarn: 'Agent + company shares ≠ 100%',
+      quote: 'Generate quote', quoteTitle: 'Client quote', downloadPng: 'Download PNG',
+      commissionQuote: 'Commission breakdown', preparedBy: 'Prepared by', propertyDetails: 'Property',
+      // history
+      history: 'Commission history', historyDesc: 'Monthly reports & exports',
+      monthF: 'Month', agentF: 'Agent', projectF: 'Project',
+      exportCsv: 'Excel (CSV)', exportPdf: 'PDF',
+      totalValue: 'Sales value', dealsCount: 'Deals',
+      noHistory: 'No closed deals match these filters.',
+      dateW: 'Date', valueW: 'Value', reportTitle: 'Commission report',
+      generatedOn: 'Generated', filteredBy: 'Filters',
+      // deals
+      addDeal: 'Add deal', editDeal: 'Edit deal', newDeal: 'New deal',
+      dealValue: 'Deal value', property: 'Property', agentName: 'Agent',
+      noDeals: 'No deals in the pipeline yet. Tap + to create one.',
+      confirmDeleteDeal: 'Delete this deal?', pipeline: 'Pipeline',
+      moveBack: 'Move back', moveNext: 'Move forward', closedOn: 'Closed on',
+      // analytics
+      analytics: 'Analytics', analyticsDesc: 'Sales, conversion & revenue',
+      salesByMonth: 'Sales performance (12 months)', convRate: 'Conversion rate',
+      funnelTitle: 'Pipeline funnel', revenueByProject: 'Revenue by project',
+      topDevelopers: 'Top developers', topLocations: 'Best locations',
+      convCaption: 'of pipeline deals end in a closed deal',
+      noData: 'Not enough data yet — close some deals first.',
+      // AI
+      ai: 'AI assistant', aiMatches: 'AI matches', aiSimilar: 'Similar properties', aiGrowth: 'Value forecast',
+      matchWord: 'match', noMatches: 'No suitable properties found for this client yet.',
+      noSimilar: 'No similar properties in your portfolio.',
+      reasonBudget: 'Within budget', reasonArea: 'Preferred area', reasonType: 'Preferred type', reasonAvailable: 'Available now',
+      simSameProject: 'Same project', simSameDev: 'Same developer', simSameType: 'Same type', simPrice: 'Similar price', simArea: 'Same area',
+      growthEstimate: 'Estimated annual growth', growthIn5: 'Projected value in 5 years',
+      growthDisclaimer: 'Heuristic estimate from your portfolio data — not financial advice.',
+      gBase: 'Market base growth', gDelivery: 'Under construction — appreciation until delivery',
+      gDemand: 'Client demand in this area', gDeveloper: 'Developer sales track record',
+      forClient: 'for', recommendFor: 'Recommended for',
+    },
+    ar: {
+      dir: 'rtl', brand: 'رينج رودز',
+      navHome: 'الرئيسية', navProps: 'العقارات', navClients: 'العملاء', navDeals: 'الصفقات', navMore: 'المزيد',
+      subtitleHome: 'نظرة عامة على أعمالك', subtitleProps: 'محفظة العقارات',
+      subtitleClients: 'إدارة العملاء', subtitleDeals: 'مسار الصفقات',
+      subtitleMore: 'الأدوات والتقارير', subtitleFollowups: 'المكالمات والاجتماعات والزيارات',
+      subtitleCalc: 'احسب العمولات بسهولة', subtitleHistory: 'عمولات الصفقات المغلقة',
+      subtitleAnalytics: 'مؤشرات الأداء',
+      back: 'رجوع', all: 'الكل', add: 'إضافة', close: 'إغلاق', search: 'بحث…',
+      theme: 'المظهر', viewAll: 'عرض الكل', none: 'بدون', optional: 'اختياري',
+      signIn: 'تسجيل الدخول', signUp: 'إنشاء حساب', email: 'البريد الإلكتروني', password: 'كلمة المرور',
+      logout: 'تسجيل الخروج', tagline: 'نظام إدارة الوساطة العقارية',
+      noAccount: 'ليس لديك حساب؟', haveAccount: 'لديك حساب بالفعل؟',
+      createAccount: 'إنشاء حساب', welcome: 'سجّل الدخول للمتابعة',
+      loginFailed: 'بيانات الدخول غير صحيحة', signupFailed: 'تعذّر إنشاء الحساب',
+      checkEmail: 'تم إنشاء الحساب — تحقق من بريدك للتأكيد ثم سجّل الدخول.',
+      configHint: 'أضف رابط Supabase ومفتاح anon في قسم CONFIG داخل index.html.',
+      dbHint: 'جدول قاعدة البيانات مفقود — نفّذ SQL الموجود في SETUP.md على مشروع Supabase.',
+      loading: 'جارٍ التحميل…', saved: 'تم الحفظ', deleted: 'تم الحذف', confirm: 'تأكيد', cancel: 'إلغاء',
+      save: 'حفظ', edit: 'تعديل', del: 'حذف',
+      salesThisMonth: 'مبيعات الشهر', commThisMonth: 'عمولات الشهر',
+      activeClients: 'عملاء نشطون', bookedVisits: 'زيارات محجوزة',
+      monthlySales: 'المبيعات الشهرية', topAgents: 'أفضل الوكلاء أداءً',
+      mostSoldProject: 'المشروع الأكثر مبيعًا', todayTasks: 'مهام اليوم',
+      noTasksToday: 'لا مهام مستحقة اليوم 🎉',
+      noSalesData: 'لا توجد صفقات مغلقة بعد. أغلق صفقة في المسار لتظهر المبيعات هنا.',
+      dealsWord: 'صفقة', unitsWord: 'وحدة',
+      total: 'إجمالي', available: 'متاح', forSale: 'للبيع', forRent: 'للإيجار',
+      beds: 'غرف', baths: 'حمام', type: 'نوع', finish: 'تشطيب', area: 'المساحة', sqm: 'م²',
+      unit: 'الوحدة', agent: 'الوكيل', registered: 'التسجيل',
+      sale: 'بيع', rent: 'إيجار', month: '/شهر', currency: 'جنيه',
+      statusAvailable: 'متاح', statusReserved: 'محجوز', statusSold: 'مباع', statusRented: 'مؤجر',
+      addProperty: 'إضافة عقار', editProperty: 'تعديل العقار', newProperty: 'عقار جديد',
+      code: 'الرمز', icon: 'الأيقونة', status: 'الحالة', price: 'السعر',
+      confirmDelete: 'حذف هذا العقار؟',
+      addressEn: 'العنوان (إنجليزي)', addressAr: 'العنوان (عربي)',
+      finishEn: 'التشطيب (إنجليزي)', finishAr: 'التشطيب (عربي)',
+      unitEn: 'الوحدة (إنجليزي)', unitAr: 'الوحدة (عربي)',
+      agentEn: 'الوكيل (إنجليزي)', agentAr: 'الوكيل (عربي)',
+      noProps: 'لا توجد عقارات بعد. اضغط + للإضافة.', noResults: 'لا نتائج مطابقة للبحث.',
+      project: 'المشروع', developer: 'المطوّر', unitType: 'نوع الوحدة',
+      delivery: 'التسليم', paymentPlan: 'خطة السداد',
+      imagesLabel: 'روابط الصور (رابط في كل سطر)', gallery: 'معرض الصور',
+      mapUrl: 'رابط خرائط جوجل', openMap: 'افتح في الخرائط',
+      utApartment: 'شقة', utVilla: 'فيلا', utTownhouse: 'تاون هاوس', utDuplex: 'دوبلكس',
+      utPenthouse: 'بنتهاوس', utStudio: 'ستوديو', utChalet: 'شاليه', utOffice: 'مكتب', utRetail: 'محل تجاري',
+      addClient: 'إضافة عميل', editClient: 'تعديل العميل', newClient: 'عميل جديد',
+      clientName: 'الاسم', phone: 'الهاتف', budget: 'الميزانية', prefArea: 'المنطقة المفضلة',
+      prefType: 'نوع الوحدة المفضل', notes: 'ملاحظات', stage: 'المرحلة', client: 'العميل',
+      noClients: 'لا يوجد عملاء بعد. اضغط + لإضافة أول عميل.',
+      confirmDeleteClient: 'حذف هذا العميل؟', call: 'اتصال', whatsapp: 'واتساب',
+      stNewLead: 'عميل جديد', stContacted: 'تم التواصل', stVisit: 'زيارة مجدولة',
+      stNegotiating: 'تفاوض', stReservation: 'حجز', stSigned: 'تم التعاقد',
+      dsLead: 'محتمل', dsContacted: 'تم التواصل', dsVisit: 'زيارة',
+      dsNegotiation: 'تفاوض', dsReservation: 'حجز', dsClosed: 'مغلقة',
+      followups: 'المتابعات', followupsDesc: 'التذكيرات والمكالمات ومهام اليوم',
+      addFollowup: 'إضافة متابعة', editFollowup: 'تعديل المتابعة',
+      fuTitle: 'المهمة', fuKind: 'النوع', kCall: 'مكالمة', kMeeting: 'اجتماع', kVisit: 'زيارة موقع', kOther: 'أخرى',
+      dueDate: 'التاريخ', dueTime: 'الوقت', overdue: 'متأخرة', today: 'اليوم',
+      upcoming: 'قادمة', completedGroup: 'منجزة', showDone: 'عرض المنجزة',
+      noFollowups: 'لا توجد متابعات بعد. اضغط + لجدولة واحدة.',
+      enableNotifs: 'تفعيل الإشعارات', notifsOn: 'الإشعارات مفعّلة',
+      notifBlocked: 'الإشعارات محظورة في إعدادات المتصفح.',
+      notifUnsupported: 'هذا المتصفح لا يدعم الإشعارات.',
+      confirmDeleteFu: 'حذف هذه المتابعة؟',
+      calc: 'حاسبة العمولة', calcDesc: 'قسّم أي صفقة في ثوانٍ',
+      propPrice: 'سعر العقار', commPct: 'نسبة العمولة', agentShare: 'نسبة الوكيل', companyShare: 'نسبة الشركة',
+      totalCommission: 'إجمالي العمولة', agentCommission: 'عمولة الوكيل', companyCommission: 'عمولة الشركة',
+      pickProperty: 'اختر عقارًا (اختياري)', inputs: 'مدخلات الصفقة', results: 'النتائج',
+      shareWarn: 'مجموع نسبتي الوكيل والشركة لا يساوي 100%',
+      quote: 'إنشاء عرض سعر', quoteTitle: 'عرض سعر للعميل', downloadPng: 'تنزيل صورة',
+      commissionQuote: 'تفاصيل العمولة', preparedBy: 'أعدّه', propertyDetails: 'العقار',
+      history: 'سجل العمولات', historyDesc: 'تقارير شهرية وتصدير',
+      monthF: 'الشهر', agentF: 'الوكيل', projectF: 'المشروع',
+      exportCsv: 'إكسل (CSV)', exportPdf: 'PDF',
+      totalValue: 'قيمة المبيعات', dealsCount: 'الصفقات',
+      noHistory: 'لا توجد صفقات مغلقة مطابقة لهذه الفلاتر.',
+      dateW: 'التاريخ', valueW: 'القيمة', reportTitle: 'تقرير العمولات',
+      generatedOn: 'تاريخ الإصدار', filteredBy: 'الفلاتر',
+      addDeal: 'إضافة صفقة', editDeal: 'تعديل الصفقة', newDeal: 'صفقة جديدة',
+      dealValue: 'قيمة الصفقة', property: 'العقار', agentName: 'الوكيل',
+      noDeals: 'لا توجد صفقات في المسار بعد. اضغط + لإنشاء واحدة.',
+      confirmDeleteDeal: 'حذف هذه الصفقة؟', pipeline: 'المسار',
+      moveBack: 'رجوع للخلف', moveNext: 'تقدم للأمام', closedOn: 'أُغلقت في',
+      analytics: 'التحليلات', analyticsDesc: 'المبيعات والتحويل والإيرادات',
+      salesByMonth: 'أداء المبيعات (12 شهرًا)', convRate: 'معدل التحويل',
+      funnelTitle: 'قمع الصفقات', revenueByProject: 'الإيرادات حسب المشروع',
+      topDevelopers: 'أفضل المطوّرين', topLocations: 'أفضل المناطق',
+      convCaption: 'من صفقات المسار تنتهي بصفقة مغلقة',
+      noData: 'لا توجد بيانات كافية بعد — أغلق بعض الصفقات أولًا.',
+      ai: 'المساعد الذكي', aiMatches: 'ترشيحات ذكية', aiSimilar: 'عقارات مشابهة', aiGrowth: 'توقع النمو',
+      matchWord: 'تطابق', noMatches: 'لا توجد عقارات مناسبة لهذا العميل حاليًا.',
+      noSimilar: 'لا توجد عقارات مشابهة في محفظتك.',
+      reasonBudget: 'ضمن الميزانية', reasonArea: 'المنطقة المفضلة', reasonType: 'النوع المفضل', reasonAvailable: 'متاح الآن',
+      simSameProject: 'نفس المشروع', simSameDev: 'نفس المطوّر', simSameType: 'نفس النوع', simPrice: 'سعر متقارب', simArea: 'نفس المنطقة',
+      growthEstimate: 'النمو السنوي المتوقع', growthIn5: 'القيمة المتوقعة بعد 5 سنوات',
+      growthDisclaimer: 'تقدير إرشادي من بيانات محفظتك — ليس نصيحة مالية.',
+      gBase: 'نمو السوق الأساسي', gDelivery: 'قيد الإنشاء — ارتفاع متوقع حتى التسليم',
+      gDemand: 'طلب العملاء على هذه المنطقة', gDeveloper: 'سجل مبيعات المطوّر',
+      forClient: 'لـ', recommendFor: 'مرشّحة لـ',
+    },
+  };
+  const MONTHS_SHORT = {
+    en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+    ar: ['ينا','فبر','مار','أبر','ماي','يون','يول','أغس','سبت','أكت','نوف','ديس'],
+  };
+  const STAGE_LABEL_KEYS = { new_lead:'stNewLead', contacted:'stContacted', visit_scheduled:'stVisit', negotiating:'stNegotiating', reservation:'stReservation', contract_signed:'stSigned' };
+  const DEAL_STAGE_LABEL_KEYS = { lead:'dsLead', contacted:'dsContacted', visit:'dsVisit', negotiation:'dsNegotiation', reservation:'dsReservation', closed:'dsClosed' };
+  const UNIT_TYPE_LABEL_KEYS = { apartment:'utApartment', villa:'utVilla', townhouse:'utTownhouse', duplex:'utDuplex', penthouse:'utPenthouse', studio:'utStudio', chalet:'utChalet', office:'utOffice', retail:'utRetail' };
+  const FU_KIND_LABEL_KEYS = { call:'kCall', meeting:'kMeeting', visit:'kVisit', other:'kOther' };
+
+  /* ===================================================================== */
+  /* 6.  STATE                                                             */
+  /* ===================================================================== */
+  const state = {
+    session: null,          // { access_token, refresh_token, expires_at, user }
+    lang: localStorage.getItem('ringroads_lang') || 'en',
+    theme: localStorage.getItem('ringroads_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    screen: 'dashboard',    // dashboard|properties|clients|deals|more|followups|calculator|history|analytics
+    loading: false,
+    dataError: null,
+
+    properties: [], clients: [], deals: [], followups: [],
+
+    // auth screen
+    authMode: 'login', authError: null, authInfo: null, authBusy: false,
+
+    // properties screen
+    expandedId: null, propSearch: '', propFilter: 'all',
+    formOpen: false, formError: null, formBusy: false, editing: null,
+
+    // clients screen
+    expandedClientId: null, clientSearch: '', clientFilter: 'all',
+    clientFormOpen: false, clientFormError: null, clientFormBusy: false, editingClient: null,
+
+    // follow-ups
+    fuFormOpen: false, fuFormError: null, fuFormBusy: false, editingFu: null,
+    fuPrefillClient: '', fuShowDone: false,
+
+    // deals
+    dealFormOpen: false, dealFormError: null, dealFormBusy: false, editingDeal: null,
+
+    // generic delete confirmation: { kind: 'property'|'client'|'deal'|'followup', id }
+    confirmDel: null,
+
+    // commission calculator
+    calc: { propId: '', price: '3000000', pct: '2.5', agentShare: '40', companyShare: '60' },
+    quoteOpen: false,
+
+    // commission history filters
+    histMonth: 'all', histAgent: 'all', histProject: 'all',
+
+    // AI modal: { kind: 'match'|'similar'|'growth', id }
+    aiOpen: null,
+
+    lightboxUrl: null,
+  };
+  document.documentElement.dataset.theme = state.theme;
+
+  /* ===================================================================== */
+  /* 7.  SUPABASE REST HELPERS                                             */
+  /* ===================================================================== */
+  function authHeaders(json) {
+    const h = { apikey: SUPABASE_ANON_KEY };
+    if (state.session && state.session.access_token) h.Authorization = 'Bearer ' + state.session.access_token;
+    if (json) h['Content-Type'] = 'application/json';
+    return h;
+  }
+
+  // --- GoTrue auth endpoints ---
+  async function apiSignUp(email, password) {
+    const res = await fetch(AUTH_URL + '/signup', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error_description || data.msg || data.message || 'signup_failed');
+    return data;
+  }
+
+  async function apiSignIn(email, password) {
+    const res = await fetch(AUTH_URL + '/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error_description || data.msg || 'invalid_grant');
+    return data;
+  }
+
+  async function apiRefresh(refresh_token) {
+    const res = await fetch(AUTH_URL + '/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error('refresh_failed');
+    return data;
+  }
+
+  async function apiSignOut() {
+    if (!state.session) return;
+    try {
+      await fetch(AUTH_URL + '/logout', { method: 'POST', headers: authHeaders(false) });
+    } catch (_) { /* best-effort */ }
+  }
+
+  // --- PostgREST data with automatic single-retry on 401 (refresh) ---
+  async function restFetch(path, opts = {}, _retried = false) {
+    const res = await fetch(REST_URL + path, {
+      ...opts,
+      headers: { ...authHeaders(true), ...(opts.headers || {}) },
+    });
+    if (res.status === 401 && !_retried && state.session && state.session.refresh_token) {
+      const ok = await tryRefresh();
+      if (ok) return restFetch(path, opts, true);
+      forceLogout();
+      throw new Error('unauthorized');
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.hint || ('HTTP ' + res.status));
+    }
+    if (res.status === 204) return null;
+    return res.json();
+  }
+
+  const rest = {
+    list:   (table, order) => restFetch('/' + table + '?select=*&order=' + order),
+    create: (table, row)   => restFetch('/' + table, { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(row) }),
+    update: (table, id, row) => restFetch('/' + table + '?id=eq.' + encodeURIComponent(id), { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(row) }),
+    remove: (table, id)    => restFetch('/' + table + '?id=eq.' + encodeURIComponent(id), { method: 'DELETE' }),
+  };
+
+  /* ===================================================================== */
+  /* 8.  AUTH LOGIC                                                         */
+  /* ===================================================================== */
+  function persistSession(tokenPayload) {
+    const sess = {
+      access_token: tokenPayload.access_token,
+      refresh_token: tokenPayload.refresh_token,
+      expires_at: Date.now() + (tokenPayload.expires_in || 3600) * 1000,
+      user: tokenPayload.user || null,
+    };
+    state.session = sess;
+    localStorage.setItem(SESSION_KEY, JSON.stringify(sess));
+  }
+
+  function clearSession() {
+    state.session = null;
+    localStorage.removeItem(SESSION_KEY);
+  }
+
+  async function tryRefresh() {
+    try {
+      const data = await apiRefresh(state.session.refresh_token);
+      if (!data.access_token) return false;
+      persistSession(data);
+      return true;
+    } catch (_) { return false; }
+  }
+
+  function forceLogout() {
+    clearSession();
+    state.screen = 'dashboard';
+    state.properties = []; state.clients = []; state.deals = []; state.followups = [];
+    renderRoot();
+  }
+
+  async function restoreSession() {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return;
+    try {
+      const sess = JSON.parse(raw);
+      if (!sess || !sess.access_token) return;
+      state.session = sess;
+      if (!sess.expires_at || sess.expires_at - Date.now() < 60000) {
+        const ok = await tryRefresh();
+        if (!ok) { clearSession(); return; }
+      }
+    } catch (_) { clearSession(); }
+  }
+
+  async function handleAuthSubmit() {
+    const emailEl = document.getElementById('auth-email');
+    const passEl = document.getElementById('auth-password');
+    const email = emailEl ? emailEl.value.trim() : '';
+    const password = passEl ? passEl.value : '';
+    if (!email || !password) { state.authError = t('loginFailed'); renderRoot(); return; }
+
+    state.authBusy = true; state.authError = null; state.authInfo = null; renderRoot();
+    try {
+      if (state.authMode === 'signup') {
+        const data = await apiSignUp(email, password);
+        if (data.access_token) {
+          persistSession(data);
+          await afterLogin();
+          return;
+        }
+        state.authMode = 'login';
+        state.authInfo = t('checkEmail');
+      } else {
+        const data = await apiSignIn(email, password);
+        persistSession(data);
+        await afterLogin();
+        return;
+      }
+    } catch (err) {
+      state.authError = state.authMode === 'signup'
+        ? (String(err.message).match(/already|registered|exists/i) ? t('signupFailed') + ' — ' + err.message : t('signupFailed'))
+        : t('loginFailed');
+    } finally {
+      state.authBusy = false;
+      renderRoot();
+    }
+  }
+
+  async function afterLogin() {
+    state.authBusy = false;
+    renderRoot();
+    await loadAll();
+  }
+
+  async function handleLogout() {
+    await apiSignOut();
+    forceLogout();
+  }
+
+  /* ===================================================================== */
+  /* 9.  UTILITIES                                                          */
+  /* ===================================================================== */
+  const L = () => I18N[state.lang];
+  const t = (k) => (I18N[state.lang][k] ?? I18N.en[k] ?? k);
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => (
+    { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]
+  ));
+  const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+  const groupNum = (n) => Math.round(n).toLocaleString('en-US'); // Western digits, comma-grouped per spec
+
+  function fmtMoney(n) { return groupNum(n) + ' ' + t('currency'); }
+  function fmtCompact(n) {
+    const a = Math.abs(n);
+    const trim = (v) => { const s = v.toFixed(1); return s.endsWith('.0') ? s.slice(0, -2) : s; };
+    if (a >= 1e9) return trim(n / 1e9) + 'B';
+    if (a >= 1e6) return trim(n / 1e6) + 'M';
+    if (a >= 1e3) return trim(n / 1e3) + 'K';
+    return groupNum(n);
+  }
+  function fmtPrice(p) {
+    const cur = t('currency');
+    if (p.type === 'rent') return groupNum(p.price) + ' ' + cur + t('month');
+    return groupNum(p.price) + ' ' + cur;
+  }
+
+  // bilingual field accessor for a property row (stored as _en/_ar columns)
+  const pv = (p, base) => p[base + '_' + state.lang] || p[base + '_en'] || '';
+
+  function statusLabel(status) {
+    return { available: t('statusAvailable'), reserved: t('statusReserved'), sold: t('statusSold'), rented: t('statusRented') }[status] || status;
+  }
+  const stageLabel = (s) => t(STAGE_LABEL_KEYS[s] || s);
+  const dealStageLabel = (s) => t(DEAL_STAGE_LABEL_KEYS[s] || s);
+  const unitTypeLabel = (u) => (u ? t(UNIT_TYPE_LABEL_KEYS[u] || u) : '—');
+  const fuKindLabel = (k) => t(FU_KIND_LABEL_KEYS[k] || k);
+
+  const clientById = (id) => state.clients.find(c => c.id === id) || null;
+  const propById = (id) => state.properties.find(p => p.id === id) || null;
+  function propLabel(p) {
+    if (!p) return '—';
+    return (p.project ? p.project + ' · ' : '') + p.code;
+  }
+  function propImages(p) {
+    if (Array.isArray(p.images)) return p.images.filter(Boolean);
+    return [];
+  }
+
+  function monthLabel(key) { // '2026-07' -> 'Jul 2026' / 'يول 2026'
+    if (!key) return '—';
+    const [y, m] = key.split('-').map(Number);
+    return MONTHS_SHORT[state.lang][(m || 1) - 1] + ' ' + y;
+  }
+  function todayKey() { return new Date().toISOString().slice(0, 10); }
+  function thisMonthKey() { return new Date().toISOString().slice(0, 7); }
+
+  function fmtDue(f) {
+    const d = new Date(f.due_at);
+    if (isNaN(d)) return '';
+    const dateStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const timeStr = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    return (dateStr === localTodayKey() ? t('today') : dateStr) + ' · ' + timeStr;
+  }
+  function localTodayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  async function loadAll() {
+    state.loading = true; state.dataError = null; renderRoot();
+    const jobs = [
+      rest.list('properties', 'code.asc').then(r => { state.properties = r || []; }),
+      rest.list('clients', 'created_at.desc').then(r => { state.clients = r || []; }),
+      rest.list('deals', 'created_at.desc').then(r => { state.deals = r || []; }),
+      rest.list('followups', 'due_at.asc').then(r => { state.followups = r || []; }),
+    ];
+    const results = await Promise.allSettled(jobs);
+    const failed = results.filter(r => r.status === 'rejected');
+    if (failed.length) {
+      const msgs = failed.map(f => String(f.reason && f.reason.message || f.reason));
+      const missingTable = msgs.some(m => /relation|does not exist|schema cache|404/i.test(m));
+      state.dataError = msgs[0] + (missingTable ? ' — ' + t('dbHint') : '');
+    }
+    state.loading = false;
+    renderRoot();
+    checkDueFollowups();
+  }
+
+  let toastTimer = null;
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('on'), 2200);
+  }
+
+  /* ===================================================================== */
+  /* 10.  BUSINESS CALCULATIONS                                             */
+  /* ===================================================================== */
+  function calcCommission(price, pct, agentShare, companyShare) {
+    const total = num(price) * num(pct) / 100;
+    return {
+      total,
+      agent: total * num(agentShare) / 100,
+      company: total * num(companyShare) / 100,
+    };
+  }
+  function dealCommission(d) {
+    return calcCommission(d.value, d.commission_pct, d.agent_share_pct, d.company_share_pct);
+  }
+  const closedDeals = () => state.deals.filter(d => d.stage === 'closed' && d.closed_at);
+
+  function lastNMonths(n) {
+    const out = [];
+    const d = new Date();
+    d.setDate(1);
+    for (let i = n - 1; i >= 0; i--) {
+      const dd = new Date(d.getFullYear(), d.getMonth() - i, 1);
+      const key = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0');
+      out.push({ key, label: MONTHS_SHORT[state.lang][dd.getMonth()] });
+    }
+    return out;
+  }
+
+  function monthlySalesSeries(n) {
+    const months = lastNMonths(n);
+    const sums = {};
+    closedDeals().forEach(d => {
+      const k = String(d.closed_at).slice(0, 7);
+      sums[k] = (sums[k] || 0) + num(d.value);
+    });
+    return months.map(m => ({ label: m.label, key: m.key, value: sums[m.key] || 0 }));
+  }
+
+  function groupSum(rows, keyFn, valFn) {
+    const map = new Map();
+    rows.forEach(r => {
+      const k = keyFn(r);
+      if (!k) return;
+      const cur = map.get(k) || { key: k, value: 0, count: 0 };
+      cur.value += valFn(r); cur.count += 1;
+      map.set(k, cur);
+    });
+    return [...map.values()].sort((a, b) => b.value - a.value);
+  }
+
+  function dashboardMetrics() {
+    const mk = thisMonthKey();
+    const closed = closedDeals();
+    const thisMonth = closed.filter(d => String(d.closed_at).slice(0, 7) === mk);
+    const sales = thisMonth.reduce((s, d) => s + num(d.value), 0);
+    const comm = thisMonth.reduce((s, d) => s + dealCommission(d).total, 0);
+    const activeClients = state.clients.filter(c => c.stage !== 'contract_signed').length;
+    const visits = state.followups.filter(f => f.kind === 'visit' && !f.done).length;
+    const topAgents = groupSum(closed, d => (d.agent || '').trim(), d => dealCommission(d).total).slice(0, 5);
+    const byProject = groupSum(closed, d => { const p = propById(d.property_id); return p ? (p.project || p.code) : null; }, d => num(d.value));
+    const mostSold = byProject.length ? byProject.reduce((a, b) => (b.count > a.count ? b : a), byProject[0]) : null;
+    return { sales, comm, activeClients, visits, topAgents, mostSold };
+  }
+
+  function dealArea(d) {
+    const p = propById(d.property_id);
+    if (!p || !p.address_en) return null;
+    return String(p.address_en).split(',')[0].trim();
+  }
+
+  /* ===================================================================== */
+  /* 11.  AI HEURISTICS (client-side scoring over portfolio data)           */
+  /* ===================================================================== */
+  function aiMatchesForClient(client) {
+    const budget = num(client.budget);
+    const area = (client.preferred_area || '').trim().toLowerCase();
+    return state.properties.map(p => {
+      let score = 0; const reasons = [];
+      if (p.status === 'available') { score += 15; reasons.push(t('reasonAvailable')); }
+      if (budget > 0 && num(p.price) <= budget * 1.1) {
+        const closeness = Math.max(0, 1 - Math.abs(budget - num(p.price)) / budget);
+        score += Math.round(25 + 15 * closeness);
+        reasons.push(t('reasonBudget'));
+      }
+      if (area && ((p.address_en || '').toLowerCase().includes(area)
+        || (p.address_ar || '').includes((client.preferred_area || '').trim())
+        || (p.project || '').toLowerCase().includes(area))) {
+        score += 25; reasons.push(t('reasonArea'));
+      }
+      if (client.preferred_unit_type && p.unit_type === client.preferred_unit_type) {
+        score += 20; reasons.push(t('reasonType'));
+      }
+      return { p, score: Math.min(99, score), reasons };
+    }).filter(m => m.score >= 30).sort((a, b) => b.score - a.score).slice(0, 5);
+  }
+
+  function aiSimilarProps(prop) {
+    return state.properties.filter(p => p.id !== prop.id).map(p => {
+      let score = 0; const reasons = [];
+      if (prop.unit_type && p.unit_type === prop.unit_type) { score += 30; reasons.push(t('simSameType')); }
+      if (prop.project && p.project === prop.project) { score += 25; reasons.push(t('simSameProject')); }
+      else if (prop.developer && p.developer === prop.developer) { score += 15; reasons.push(t('simSameDev')); }
+      const a = num(prop.price), b = num(p.price);
+      if (a > 0 && b > 0) {
+        const diff = Math.abs(a - b) / a;
+        if (diff <= 0.2) { score += Math.round(30 * (1 - diff / 0.2)); reasons.push(t('simPrice')); }
+      }
+      const areaA = (prop.address_en || '').split(',')[0].trim().toLowerCase();
+      const areaB = (p.address_en || '').split(',')[0].trim().toLowerCase();
+      if (areaA && areaA === areaB) { score += 15; reasons.push(t('simArea')); }
+      return { p, score: Math.min(99, score), reasons };
+    }).filter(m => m.score >= 25).sort((a, b) => b.score - a.score).slice(0, 4);
+  }
+
+  function aiGrowthForecast(p) {
+    const reasons = [{ k: t('gBase'), v: '+5%' }];
+    let pct = 5;
+    if (p.delivery && new Date(p.delivery) > new Date()) { pct += 3; reasons.push({ k: t('gDelivery'), v: '+3%' }); }
+    const area = (p.address_en || '').split(',')[0].trim().toLowerCase();
+    if (area) {
+      const demand = state.clients.filter(c => (c.preferred_area || '').toLowerCase().includes(area)).length;
+      if (demand > 0) {
+        const add = Math.min(4, demand);
+        pct += add;
+        reasons.push({ k: t('gDemand') + ' (' + demand + ')', v: '+' + add + '%' });
+      }
+    }
+    if (p.developer) {
+      const devSold = state.properties.filter(x => x.developer === p.developer && x.status === 'sold').length;
+      if (devSold > 0) { pct += 2; reasons.push({ k: t('gDeveloper'), v: '+2%' }); }
+    }
+    const in5 = num(p.price) * Math.pow(1 + pct / 100, 5);
+    return { low: Math.max(0, pct - 2), high: pct + 2, mid: pct, in5, reasons };
+  }
+
+  /* ===================================================================== */
+  /* 12.  CHART HELPERS (inline SVG + HTML bars, themed via CSS variables)  */
+  /* ===================================================================== */
+  function svgBarChart(items, opts = {}) {
+    const W = opts.width || 340, H = opts.height || 170;
+    const padL = 6, padR = 6, padB = 22, padT = 16;
+    const max = Math.max(...items.map(i => i.value), 1);
+    const iw = (W - padL - padR) / Math.max(items.length, 1);
+    const bw = Math.max(6, Math.min(26, iw * 0.55));
+    let bars = '';
+    items.forEach((it, idx) => {
+      const cx = padL + iw * idx + iw / 2;
+      if (it.value > 0) {
+        const h = Math.max(4, (H - padT - padB) * (it.value / max));
+        const x = cx - bw / 2;
+        const y = H - padB - h;
+        const r = Math.min(4, bw / 2, h);
+        // Rounded top, flat baseline (data-end treatment).
+        const d = 'M' + x + ',' + (y + r)
+          + ' a' + r + ',' + r + ' 0 0 1 ' + r + ',-' + r
+          + ' h' + (bw - 2 * r)
+          + ' a' + r + ',' + r + ' 0 0 1 ' + r + ',' + r
+          + ' v' + (H - padB - y - r) + ' h-' + bw + ' z';
+        bars += '<path class="cbar" d="' + d + '" fill="var(--chart-bar)" data-tip="' + esc(it.tip || (it.label + ': ' + fmtCompact(it.value))) + '"></path>';
+        if (it.value === max) {
+          bars += '<text class="cval" x="' + cx + '" y="' + (y - 5) + '" text-anchor="middle">' + esc(fmtCompact(it.value)) + '</text>';
+        }
+      }
+      bars += '<text class="clab" x="' + cx + '" y="' + (H - 7) + '" text-anchor="middle">' + esc(it.label) + '</text>';
+    });
+    return '<svg class="chartbox" viewBox="0 0 ' + W + ' ' + H + '" role="img" style="display:block" dir="ltr">'
+      + '<line x1="' + padL + '" y1="' + (H - padB) + '" x2="' + (W - padR) + '" y2="' + (H - padB) + '" stroke="var(--border-default)" stroke-width="1"/>'
+      + bars + '</svg>';
+  }
+
+  function hbarList(items, valFmt) {
+    if (!items.length) return '<div class="empty">' + esc(t('noData')) + '</div>';
+    const max = Math.max(...items.map(i => i.value), 1);
+    return '<div class="hbar">' + items.map(it => `
+      <div class="hbar__row">
+        <span class="hbar__label" title="${esc(it.key)}">${it.prefix || ''}${esc(it.key)}</span>
+        <span class="hbar__track"><span class="hbar__fill" style="width:${Math.max(3, Math.round(100 * it.value / max))}%"></span></span>
+        <span class="hbar__val">${esc(valFmt ? valFmt(it) : fmtCompact(it.value))}</span>
+      </div>`).join('') + '</div>';
+  }
+
+  /* ===================================================================== */
+  /* 13.  RENDER: ROOT + AUTH                                               */
+  /* ===================================================================== */
+  function renderRoot() {
+    const root = document.getElementById('app-root');
+    document.documentElement.lang = state.lang;
+    document.documentElement.dir = L().dir;
+    document.documentElement.dataset.theme = state.theme;
+    if (!state.session) {
+      root.innerHTML = renderAuthScreen();
+    } else {
+      root.innerHTML = renderShell();
+    }
+  }
+
+  function renderAuthScreen() {
+    const signup = state.authMode === 'signup';
+    const cfgBanner = CONFIGURED ? '' :
+      `<div class="banner banner--info" style="margin-bottom:var(--space-4)">${esc(t('configHint'))}</div>`;
+    const errBanner = state.authError ? `<div class="banner banner--error">${esc(state.authError)}</div>` : '';
+    const infoBanner = state.authInfo ? `<div class="banner banner--info">${esc(state.authInfo)}</div>` : '';
+    return `
+      <div class="auth" dir="${L().dir}">
+        <div class="auth__card">
+          <div class="auth__brand"><span>🏢</span> ${esc(t('brand'))}</div>
+          <div class="auth__tagline">${esc(t('tagline'))} · ${esc(t('welcome'))}</div>
+          <div style="display:flex;justify-content:flex-end;gap:var(--space-2);margin-bottom:var(--space-3)">
+            <div class="langtoggle" dir="ltr" style="background:var(--surface-app)">
+              <button class="${state.lang==='en'?'on':''}" style="${state.lang==='en'?'':'color:var(--text-muted)'}" data-action="lang" data-lang="en">EN</button>
+              <button class="${state.lang==='ar'?'on':''}" style="${state.lang==='ar'?'':'color:var(--text-muted)'}" data-action="lang" data-lang="ar">ع</button>
+            </div>
+            <button class="icon-btn" style="background:var(--surface-app);color:var(--text-muted)" data-action="theme" title="${esc(t('theme'))}">${state.theme==='dark'?'☀️':'🌙'}</button>
+          </div>
+          ${cfgBanner}
+          <form class="auth__form" data-action="auth-submit">
+            ${errBanner}${infoBanner}
+            <label class="field">
+              <span class="field__label">${esc(t('email'))}</span>
+              <div class="field__wrap"><input id="auth-email" class="field__input" type="email" autocomplete="email" dir="ltr" required></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('password'))}</span>
+              <div class="field__wrap"><input id="auth-password" class="field__input" type="password" autocomplete="${signup?'new-password':'current-password'}" dir="ltr" required></div>
+            </label>
+            <button type="submit" class="btn btn--primary btn--block" ${state.authBusy?'disabled':''}>
+              ${state.authBusy ? esc(t('loading')) : esc(signup ? t('createAccount') : t('signIn'))}
+            </button>
+          </form>
+          <div class="auth__switch">
+            ${esc(signup ? t('haveAccount') : t('noAccount'))}
+            <button data-action="auth-toggle">${esc(signup ? t('signIn') : t('signUp'))}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 14.  RENDER: APP SHELL (header + nav + screen)                         */
+  /* ===================================================================== */
+  const SCREEN_META = {
+    dashboard:  { sub: 'subtitleHome',      tab: 'dashboard',  fab: null },
+    properties: { sub: 'subtitleProps',     tab: 'properties', fab: 'add-property' },
+    clients:    { sub: 'subtitleClients',   tab: 'clients',    fab: 'add-client' },
+    deals:      { sub: 'subtitleDeals',     tab: 'deals',      fab: 'add-deal' },
+    more:       { sub: 'subtitleMore',      tab: 'more',       fab: null },
+    followups:  { sub: 'subtitleFollowups', tab: 'more',       fab: 'add-fu' },
+    calculator: { sub: 'subtitleCalc',      tab: 'more',       fab: null },
+    history:    { sub: 'subtitleHistory',   tab: 'more',       fab: null },
+    analytics:  { sub: 'subtitleAnalytics', tab: 'more',       fab: null },
+  };
+
+  function renderShell() {
+    const meta = SCREEN_META[state.screen] || SCREEN_META.dashboard;
+    const renderers = {
+      dashboard: renderDashboard, properties: renderProperties, clients: renderClients,
+      deals: renderDeals, more: renderMore, followups: renderFollowups,
+      calculator: renderCalculator, history: renderHistory, analytics: renderAnalytics,
+    };
+    const content = (renderers[state.screen] || renderDashboard)();
+    const fab = meta.fab ? `<button class="fab" data-action="${meta.fab}" aria-label="${esc(t('add'))}">+</button>` : '';
+    const tabs = [
+      { id: 'dashboard',  ic: '📊', l: 'navHome' },
+      { id: 'properties', ic: '🏢', l: 'navProps' },
+      { id: 'clients',    ic: '👥', l: 'navClients' },
+      { id: 'deals',      ic: '📋', l: 'navDeals' },
+      { id: 'more',       ic: '⚙️', l: 'navMore' },
+    ];
+    const modals =
+      (state.formOpen ? renderPropertyForm() : '') +
+      (state.clientFormOpen ? renderClientForm() : '') +
+      (state.fuFormOpen ? renderFuForm() : '') +
+      (state.dealFormOpen ? renderDealForm() : '') +
+      (state.quoteOpen ? renderQuoteModal() : '') +
+      (state.aiOpen ? renderAiModal() : '') +
+      (state.lightboxUrl ? `<div class="lightbox" data-action-overlay="lightbox" data-action="close-lightbox"><img src="${esc(state.lightboxUrl)}" alt=""></div>` : '');
+    return `
+      <div class="shell" dir="${L().dir}">
+        <header class="shell__header">
+          <div class="htop">
+            <div>
+              <div class="brand"><span class="brand__glyph" aria-hidden="true">🏢</span> ${esc(t('brand'))}</div>
+              <div class="subtitle">${esc(t(meta.sub))}</div>
+            </div>
+            <div class="header-actions">
+              <div class="langtoggle" dir="ltr">
+                <button class="${state.lang==='en'?'on':''}" data-action="lang" data-lang="en">EN</button>
+                <button class="${state.lang==='ar'?'on':''}" data-action="lang" data-lang="ar">ع</button>
+              </div>
+              <button class="icon-btn" data-action="theme" title="${esc(t('theme'))}" aria-label="${esc(t('theme'))}">${state.theme==='dark'?'☀️':'🌙'}</button>
+              <button class="icon-btn" data-action="logout" title="${esc(t('logout'))}" aria-label="${esc(t('logout'))}">🚪</button>
+            </div>
+          </div>
+        </header>
+        <main class="shell__scroll">${content}</main>
+        ${fab}
+        <div class="tabwrap">
+          <nav class="tabbar">
+            ${tabs.map(tb => `
+              <button class="tabbar__tab ${meta.tab===tb.id?'on':''}" data-action="tab" data-tab="${tb.id}">
+                <span class="ticon" aria-hidden="true">${tb.ic}</span>${esc(t(tb.l))}
+              </button>`).join('')}
+          </nav>
+        </div>
+      </div>
+      ${modals}`;
+  }
+
+  function loadErrorBanner() {
+    return state.dataError ? `<div class="banner banner--error">${esc(state.dataError)}</div>` : '';
+  }
+
+  /* ===================================================================== */
+  /* 15.  RENDER: DASHBOARD                                                 */
+  /* ===================================================================== */
+  function renderDashboard() {
+    if (state.loading) return `<div class="screen"><div class="spinner"></div></div>`;
+    const m = dashboardMetrics();
+    const series = monthlySalesSeries(6);
+    const hasSales = series.some(s => s.value > 0);
+    const todays = state.followups.filter(f => !f.done && String(fmtDueDateKey(f)) === localTodayKey()).slice(0, 5);
+    const stats = [
+      { v: fmtCompact(m.sales), l: t('salesThisMonth'), cls: '' },
+      { v: fmtCompact(m.comm), l: t('commThisMonth'), cls: 'statcard--success' },
+      { v: m.activeClients, l: t('activeClients'), cls: '' },
+      { v: m.visits, l: t('bookedVisits'), cls: 'statcard--warning' },
+    ];
+    return `
+      <div class="screen">
+        ${loadErrorBanner()}
+        <div class="statrow statrow--4">
+          ${stats.map(s => `
+            <div class="statcard ${s.cls}">
+              <div class="statcard__value">${esc(s.v)}</div>
+              <div class="statcard__label">${esc(s.l)}</div>
+            </div>`).join('')}
+        </div>
+
+        <section class="panel panel--brand">
+          <div class="panel__head">
+            <h3 class="panel__title">📈 ${esc(t('monthlySales'))}</h3>
+            <button class="panel__more" data-action="goto" data-screen="analytics">${esc(t('viewAll'))}</button>
+          </div>
+          ${hasSales ? svgBarChart(series.map(s => ({ label: s.label, value: s.value, tip: monthLabel(s.key) + ' — ' + fmtMoney(s.value) })))
+                     : `<div class="empty">${esc(t('noSalesData'))}</div>`}
+        </section>
+
+        <section class="panel">
+          <div class="panel__head">
+            <h3 class="panel__title">🗓️ ${esc(t('todayTasks'))}</h3>
+            <button class="panel__more" data-action="goto" data-screen="followups">${esc(t('viewAll'))}</button>
+          </div>
+          ${todays.length ? `<div class="fugroup">${todays.map(renderFuRow).join('')}</div>`
+                          : `<div class="empty" style="padding:var(--space-4)">${esc(t('noTasksToday'))}</div>`}
+        </section>
+
+        <section class="panel">
+          <h3 class="panel__title">🏆 ${esc(t('topAgents'))}</h3>
+          ${m.topAgents.length
+            ? hbarList(m.topAgents.map((a, i) => ({ key: a.key || '—', value: a.value, prefix: ['🥇 ','🥈 ','🥉 ','',''][i] || '' })))
+            : `<div class="empty" style="padding:var(--space-4)">${esc(t('noData'))}</div>`}
+        </section>
+
+        ${m.mostSold ? `
+        <section class="panel panel--success">
+          <h3 class="panel__title">⭐ ${esc(t('mostSoldProject'))}</h3>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:var(--space-2)">
+            <div style="font-size:var(--text-h2);font-weight:var(--weight-bold);color:var(--text-heading)">${esc(m.mostSold.key)}</div>
+            <div style="font-size:var(--text-sm);color:var(--text-muted)">${esc(m.mostSold.count)} ${esc(t('dealsWord'))} · ${esc(fmtCompact(m.mostSold.value))} ${esc(t('currency'))}</div>
+          </div>
+        </section>` : ''}
+      </div>`;
+  }
+  function fmtDueDateKey(f) {
+    const d = new Date(f.due_at);
+    if (isNaN(d)) return '';
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  /* ===================================================================== */
+  /* 16.  RENDER: PROPERTIES                                                */
+  /* ===================================================================== */
+  function propMatchesFilters(p) {
+    if (state.propFilter !== 'all' && p.status !== state.propFilter) return false;
+    const q = state.propSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [p.code, p.project, p.developer, p.address_en, p.address_ar, p.unit_type]
+      .some(v => v && String(v).toLowerCase().includes(q));
+  }
+
+  function renderProperties() {
+    const props = state.properties;
+    const stats = [
+      { v: props.length, l: t('total') },
+      { v: props.filter(p => p.status === 'available').length, l: t('available') },
+      { v: props.filter(p => p.status === 'reserved').length, l: t('statusReserved') },
+      { v: props.filter(p => p.status === 'sold').length, l: t('statusSold') },
+    ];
+    const chips = ['all', ...PROPERTY_STATUSES].map(s => `
+      <button class="chip ${state.propFilter===s?'on':''}" data-action="prop-filter" data-filter="${s}">
+        ${esc(s==='all' ? t('all') : statusLabel(s))}</button>`).join('');
+    return `
+      <div class="screen">
+        ${loadErrorBanner()}
+        <div class="statrow statrow--4">
+          ${stats.map(s => `
+            <div class="statcard">
+              <div class="statcard__value">${esc(s.v)}</div>
+              <div class="statcard__label">${esc(s.l)}</div>
+            </div>`).join('')}
+        </div>
+        <div class="field__wrap">
+          <input class="field__input" id="prop-search" data-search="prop" placeholder="🔍 ${esc(t('search'))}" value="${esc(state.propSearch)}">
+        </div>
+        <div class="chips">${chips}</div>
+        <div id="prop-list">${renderPropList()}</div>
+      </div>`;
+  }
+
+  function renderPropList() {
+    if (state.loading) return `<div class="spinner"></div>`;
+    const filtered = state.properties.filter(propMatchesFilters);
+    if (!state.properties.length) return `<div class="empty">${esc(t('noProps'))}</div>`;
+    if (!filtered.length) return `<div class="empty">${esc(t('noResults'))}</div>`;
+    return `<div class="plist">${filtered.map(renderPropertyCard).join('')}</div>`;
+  }
+
+  function renderPropertyCard(p) {
+    const open = state.expandedId === p.id;
+    const imgs = propImages(p);
+    const confirmingDel = state.confirmDel && state.confirmDel.kind === 'property' && state.confirmDel.id === p.id;
+    const details = open ? `
+      <div class="pcard__details">
+        ${imgs.length ? `<div class="gallery">${imgs.map(u => `<img src="${esc(u)}" loading="lazy" alt="" data-action="open-lightbox" data-url="${esc(u)}">`).join('')}</div>` : ''}
+        <div class="drow"><span class="drow__k">${esc(t('developer'))}</span><span class="drow__v">${esc(p.developer || '—')}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('unitType'))}</span><span class="drow__v">${esc(unitTypeLabel(p.unit_type))}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('delivery'))}</span><span class="drow__v">${esc(p.delivery || '—')}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('paymentPlan'))}</span><span class="drow__v">${esc(p.payment_plan || '—')}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('finish'))}</span><span class="drow__v">${esc(pv(p,'finish') || '—')}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('unit'))}</span><span class="drow__v">${esc(pv(p,'unit') || '—')}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('agent'))}</span><span class="drow__v">${esc(pv(p,'agent') || '—')}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('registered'))}</span><span class="drow__v">${esc(p.registered || '—')}</span></div>
+      </div>
+      <div class="pcard__actions">
+        ${p.map_url ? `<a class="btn btn--secondary btn--sm" href="${esc(p.map_url)}" target="_blank" rel="noopener">📍 ${esc(t('openMap'))}</a>` : ''}
+        <button class="btn btn--secondary btn--sm" data-action="ai-similar" data-id="${esc(p.id)}">✨ ${esc(t('aiSimilar'))}</button>
+        <button class="btn btn--secondary btn--sm" data-action="ai-growth" data-id="${esc(p.id)}">📈 ${esc(t('aiGrowth'))}</button>
+        <button class="btn btn--secondary btn--sm" data-action="quote-from-card" data-id="${esc(p.id)}">🧾 ${esc(t('quote'))}</button>
+        <button class="btn btn--secondary btn--sm" data-action="edit-property" data-id="${esc(p.id)}">✏️ ${esc(t('edit'))}</button>
+        ${confirmingDel
+          ? `<span style="margin-inline-start:auto;display:inline-flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+               <span style="font-size:var(--text-sm);color:var(--error)">${esc(t('confirmDelete'))}</span>
+               <button class="btn btn--danger btn--sm" data-action="confirm-del">${esc(t('confirm'))}</button>
+               <button class="btn btn--ghost btn--sm" data-action="cancel-del">${esc(t('cancel'))}</button>
+             </span>`
+          : `<button class="btn btn--danger btn--sm" style="margin-inline-start:auto" data-action="ask-del" data-kind="property" data-id="${esc(p.id)}">🗑 ${esc(t('del'))}</button>`}
+      </div>` : '';
+    return `
+      <article class="pcard ${open?'is-open':''}">
+        <button class="pcard__header" data-action="toggle-property" data-id="${esc(p.id)}">
+          <span class="pcard__id">
+            <span class="pcard__icon" aria-hidden="true">${esc(p.icon || '🏠')}</span>
+            <span style="min-width:0">
+              <span class="pcard__code">${esc(propLabel(p))}</span>
+              <span class="pcard__addr">${esc(pv(p,'address'))}</span>
+            </span>
+          </span>
+          <span class="pcard__meta">
+            <span class="pcard__price">${esc(fmtPrice(p))}</span>
+            <span class="badge badge--${esc(p.status)}">${esc(statusLabel(p.status))}</span>
+          </span>
+        </button>
+        <div class="pcard__quick">
+          <div><div class="quick__k">${esc(t('beds'))}</div><div class="quick__v">${esc(p.beds)}</div></div>
+          <div><div class="quick__k">${esc(t('baths'))}</div><div class="quick__v">${esc(p.baths)}</div></div>
+          <div><div class="quick__k">${esc(t('area'))}</div><div class="quick__v">${p.area==null?'—':esc(groupNum(p.area))}</div></div>
+          <div><div class="quick__k">${esc(t('unitType'))}</div><div class="quick__v">${esc(unitTypeLabel(p.unit_type))}</div></div>
+        </div>
+        ${details}
+      </article>`;
+  }
+
+  /* ===================================================================== */
+  /* 17.  RENDER: PROPERTY FORM (add/edit modal)                            */
+  /* ===================================================================== */
+  function renderPropertyForm() {
+    const p = state.editing || {};
+    const isEdit = !!state.editing;
+    const val = (k) => esc(p[k] == null ? '' : p[k]);
+    const iconOpts = PROPERTY_ICONS.map(ic => `<option value="${ic}" ${p.icon===ic?'selected':''}>${ic}</option>`).join('');
+    const statusOpts = PROPERTY_STATUSES.map(s =>
+      `<option value="${s}" ${(p.status||'available')===s?'selected':''}>${esc(statusLabel(s))}</option>`).join('');
+    const utOpts = `<option value="">—</option>` + UNIT_TYPES.map(u =>
+      `<option value="${u}" ${p.unit_type===u?'selected':''}>${esc(unitTypeLabel(u))}</option>`).join('');
+    const type = p.type || 'sale';
+    const imgsText = propImages(p).join('\n');
+    const errBanner = state.formError ? `<div class="banner banner--error col-2">${esc(state.formError)}</div>` : '';
+    return `
+      <div class="overlay" data-overlay="form">
+        <div class="modal" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <h2 class="modal__title">${esc(isEdit ? t('editProperty') : t('newProperty'))}</h2>
+            <button class="modal__close" data-action="close-form" aria-label="${esc(t('cancel'))}">×</button>
+          </div>
+          <form class="form-grid" data-action="save-property">
+            ${errBanner}
+            <label class="field">
+              <span class="field__label">${esc(t('code'))}</span>
+              <div class="field__wrap"><input class="field__input" name="code" value="${val('code')}" dir="ltr" required></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('icon'))}</span>
+              <div class="field__wrap"><select class="field__select" name="icon">${iconOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('project'))}</span>
+              <div class="field__wrap"><input class="field__input" name="project" value="${val('project')}"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('developer'))}</span>
+              <div class="field__wrap"><input class="field__input" name="developer" value="${val('developer')}"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('price'))}</span>
+              <div class="field__wrap field__wrap--suffix"><input class="field__input" name="price" type="number" step="any" value="${val('price')}" dir="ltr" required><span class="field__suffix">${esc(t('currency'))}</span></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('status'))}</span>
+              <div class="field__wrap"><select class="field__select" name="status">${statusOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('unitType'))}</span>
+              <div class="field__wrap"><select class="field__select" name="unit_type">${utOpts}</select></div>
+            </label>
+            <div class="field">
+              <span class="field__label">${esc(t('type'))}</span>
+              <div class="segmented" role="group">
+                <button type="button" class="${type==='sale'?'on':''}" data-action="set-type" data-type="sale">${esc(t('sale'))}</button>
+                <button type="button" class="${type==='rent'?'on':''}" data-action="set-type" data-type="rent">${esc(t('rent'))}</button>
+              </div>
+              <input type="hidden" name="type" value="${esc(type)}">
+            </div>
+            <label class="field"><span class="field__label">${esc(t('addressEn'))}</span><div class="field__wrap"><input class="field__input" name="address_en" value="${val('address_en')}" dir="ltr" required></div></label>
+            <label class="field"><span class="field__label">${esc(t('addressAr'))}</span><div class="field__wrap"><input class="field__input" name="address_ar" value="${val('address_ar')}" dir="rtl" required></div></label>
+            <label class="field"><span class="field__label">${esc(t('beds'))}</span><div class="field__wrap"><input class="field__input" name="beds" type="number" value="${p.beds==null?'':esc(p.beds)}" dir="ltr"></div></label>
+            <label class="field"><span class="field__label">${esc(t('baths'))}</span><div class="field__wrap"><input class="field__input" name="baths" type="number" value="${p.baths==null?'':esc(p.baths)}" dir="ltr"></div></label>
+            <label class="field">
+              <span class="field__label">${esc(t('area'))} (${esc(t('sqm'))})</span>
+              <div class="field__wrap"><input class="field__input" name="area" type="number" step="any" min="0" value="${p.area==null?'':esc(p.area)}" dir="ltr" inputmode="decimal"></div>
+            </label>
+            <label class="field"><span class="field__label">${esc(t('delivery'))}</span><div class="field__wrap"><input class="field__input" name="delivery" type="date" value="${val('delivery')}" dir="ltr"></div></label>
+            <label class="field col-2"><span class="field__label">${esc(t('paymentPlan'))}</span><div class="field__wrap"><input class="field__input" name="payment_plan" value="${val('payment_plan')}" placeholder="10% / 8 yrs"></div></label>
+            <label class="field"><span class="field__label">${esc(t('finishEn'))}</span><div class="field__wrap"><input class="field__input" name="finish_en" value="${val('finish_en')}" dir="ltr"></div></label>
+            <label class="field"><span class="field__label">${esc(t('finishAr'))}</span><div class="field__wrap"><input class="field__input" name="finish_ar" value="${val('finish_ar')}" dir="rtl"></div></label>
+            <label class="field"><span class="field__label">${esc(t('unitEn'))}</span><div class="field__wrap"><input class="field__input" name="unit_en" value="${val('unit_en')}" dir="ltr"></div></label>
+            <label class="field"><span class="field__label">${esc(t('unitAr'))}</span><div class="field__wrap"><input class="field__input" name="unit_ar" value="${val('unit_ar')}" dir="rtl"></div></label>
+            <label class="field"><span class="field__label">${esc(t('agentEn'))}</span><div class="field__wrap"><input class="field__input" name="agent_en" value="${val('agent_en')}" dir="ltr"></div></label>
+            <label class="field"><span class="field__label">${esc(t('agentAr'))}</span><div class="field__wrap"><input class="field__input" name="agent_ar" value="${val('agent_ar')}" dir="rtl"></div></label>
+            <label class="field"><span class="field__label">${esc(t('registered'))}</span><div class="field__wrap"><input class="field__input" name="registered" type="date" value="${val('registered')}" dir="ltr"></div></label>
+            <label class="field"><span class="field__label">${esc(t('mapUrl'))}</span><div class="field__wrap"><input class="field__input" name="map_url" type="url" value="${val('map_url')}" dir="ltr" placeholder="https://maps.google.com/…"></div></label>
+            <label class="field col-2"><span class="field__label">${esc(t('imagesLabel'))}</span><div class="field__wrap"><textarea class="field__textarea" name="images" dir="ltr" placeholder="https://…/photo1.jpg">${esc(imgsText)}</textarea></div></label>
+            <div class="form-actions col-2">
+              <button type="button" class="btn btn--secondary" data-action="close-form">${esc(t('cancel'))}</button>
+              <button type="submit" class="btn btn--primary" ${state.formBusy?'disabled':''}>${state.formBusy?esc(t('loading')):esc(t('save'))}</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 18.  RENDER: CLIENTS CRM                                               */
+  /* ===================================================================== */
+  function clientMatchesFilters(c) {
+    if (state.clientFilter !== 'all' && c.stage !== state.clientFilter) return false;
+    const q = state.clientSearch.trim().toLowerCase();
+    if (!q) return true;
+    return [c.name, c.phone, c.email, c.preferred_area].some(v => v && String(v).toLowerCase().includes(q));
+  }
+
+  function renderClients() {
+    const counts = {};
+    state.clients.forEach(c => { counts[c.stage] = (counts[c.stage] || 0) + 1; });
+    const chips = ['all', ...CLIENT_STAGES].map(s => `
+      <button class="chip ${state.clientFilter===s?'on':''}" data-action="client-filter" data-filter="${s}">
+        ${esc(s==='all' ? t('all') : stageLabel(s))}<span class="cnt">${s==='all' ? state.clients.length : (counts[s]||0)}</span></button>`).join('');
+    return `
+      <div class="screen">
+        ${loadErrorBanner()}
+        <div class="field__wrap">
+          <input class="field__input" id="client-search" data-search="client" placeholder="🔍 ${esc(t('search'))}" value="${esc(state.clientSearch)}">
+        </div>
+        <div class="chips">${chips}</div>
+        <div id="client-list">${renderClientList()}</div>
+      </div>`;
+  }
+
+  function renderClientList() {
+    if (state.loading) return `<div class="spinner"></div>`;
+    const filtered = state.clients.filter(clientMatchesFilters);
+    if (!state.clients.length) return `<div class="empty">${esc(t('noClients'))}</div>`;
+    if (!filtered.length) return `<div class="empty">${esc(t('noResults'))}</div>`;
+    return `<div class="plist">${filtered.map(renderClientCard).join('')}</div>`;
+  }
+
+  function renderClientCard(c) {
+    const open = state.expandedClientId === c.id;
+    const confirmingDel = state.confirmDel && state.confirmDel.kind === 'client' && state.confirmDel.id === c.id;
+    const stageOpts = CLIENT_STAGES.map(s => `<option value="${s}" ${c.stage===s?'selected':''}>${esc(stageLabel(s))}</option>`).join('');
+    const waPhone = String(c.phone || '').replace(/[^\d]/g, '');
+    const details = open ? `
+      <div class="pcard__details">
+        ${c.email ? `<div class="drow"><span class="drow__k">${esc(t('email'))}</span><span class="drow__v" dir="ltr">${esc(c.email)}</span></div>` : ''}
+        <div class="drow"><span class="drow__k">${esc(t('budget'))}</span><span class="drow__v">${c.budget==null?'—':esc(fmtMoney(c.budget))}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('prefArea'))}</span><span class="drow__v">${esc(c.preferred_area || '—')}</span></div>
+        <div class="drow"><span class="drow__k">${esc(t('prefType'))}</span><span class="drow__v">${esc(unitTypeLabel(c.preferred_unit_type))}</span></div>
+        ${c.notes ? `<div class="drow"><span class="drow__k">${esc(t('notes'))}</span><span class="drow__v">${esc(c.notes)}</span></div>` : ''}
+        <div class="drow" style="align-items:center">
+          <span class="drow__k">${esc(t('stage'))}</span>
+          <select class="field__select" style="width:auto;padding:6px 10px;font-size:var(--text-sm)" data-client-stage="${esc(c.id)}">${stageOpts}</select>
+        </div>
+      </div>
+      <div class="pcard__actions">
+        ${c.phone ? `<a class="btn btn--secondary btn--sm" href="tel:${esc(c.phone)}">📞 ${esc(t('call'))}</a>` : ''}
+        ${waPhone ? `<a class="btn btn--secondary btn--sm" href="https://wa.me/${esc(waPhone)}" target="_blank" rel="noopener">💬 ${esc(t('whatsapp'))}</a>` : ''}
+        <button class="btn btn--secondary btn--sm" data-action="ai-match" data-id="${esc(c.id)}">✨ ${esc(t('aiMatches'))}</button>
+        <button class="btn btn--secondary btn--sm" data-action="add-fu-for" data-id="${esc(c.id)}">⏰ ${esc(t('addFollowup'))}</button>
+        <button class="btn btn--secondary btn--sm" data-action="edit-client" data-id="${esc(c.id)}">✏️ ${esc(t('edit'))}</button>
+        ${confirmingDel
+          ? `<span style="margin-inline-start:auto;display:inline-flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
+               <span style="font-size:var(--text-sm);color:var(--error)">${esc(t('confirmDeleteClient'))}</span>
+               <button class="btn btn--danger btn--sm" data-action="confirm-del">${esc(t('confirm'))}</button>
+               <button class="btn btn--ghost btn--sm" data-action="cancel-del">${esc(t('cancel'))}</button>
+             </span>`
+          : `<button class="btn btn--danger btn--sm" style="margin-inline-start:auto" data-action="ask-del" data-kind="client" data-id="${esc(c.id)}">🗑 ${esc(t('del'))}</button>`}
+      </div>` : '';
+    return `
+      <article class="pcard ${open?'is-open':''}">
+        <button class="pcard__header" data-action="toggle-client" data-id="${esc(c.id)}">
+          <span class="pcard__id">
+            <span class="avatar" aria-hidden="true">${esc((c.name || '?').trim().charAt(0).toUpperCase())}</span>
+            <span style="min-width:0">
+              <span class="pcard__code">${esc(c.name)}</span>
+              <span class="pcard__addr" dir="ltr">${esc(c.phone || '')}</span>
+            </span>
+          </span>
+          <span class="pcard__meta">
+            ${c.budget != null && c.budget !== '' ? `<span class="pcard__price">${esc(fmtCompact(num(c.budget)))} ${esc(t('currency'))}</span>` : ''}
+            <span class="stagechip"><span class="dot" style="--stage-c:${CLIENT_STAGE_COLORS[c.stage] || '#2e7cd6'}"></span>${esc(stageLabel(c.stage))}</span>
+          </span>
+        </button>
+        ${details}
+      </article>`;
+  }
+
+  function renderClientForm() {
+    const c = state.editingClient || {};
+    const isEdit = !!state.editingClient;
+    const val = (k) => esc(c[k] == null ? '' : c[k]);
+    const stageOpts = CLIENT_STAGES.map(s => `<option value="${s}" ${(c.stage||'new_lead')===s?'selected':''}>${esc(stageLabel(s))}</option>`).join('');
+    const utOpts = `<option value="">—</option>` + UNIT_TYPES.map(u =>
+      `<option value="${u}" ${c.preferred_unit_type===u?'selected':''}>${esc(unitTypeLabel(u))}</option>`).join('');
+    const errBanner = state.clientFormError ? `<div class="banner banner--error col-2">${esc(state.clientFormError)}</div>` : '';
+    return `
+      <div class="overlay" data-overlay="client-form">
+        <div class="modal" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <h2 class="modal__title">${esc(isEdit ? t('editClient') : t('newClient'))}</h2>
+            <button class="modal__close" data-action="close-client-form" aria-label="${esc(t('cancel'))}">×</button>
+          </div>
+          <form class="form-grid" data-action="save-client">
+            ${errBanner}
+            <label class="field col-2">
+              <span class="field__label">${esc(t('clientName'))}</span>
+              <div class="field__wrap"><input class="field__input" name="name" value="${val('name')}" required></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('phone'))}</span>
+              <div class="field__wrap"><input class="field__input" name="phone" type="tel" value="${val('phone')}" dir="ltr" placeholder="+20 1…"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('email'))}</span>
+              <div class="field__wrap"><input class="field__input" name="email" type="email" value="${val('email')}" dir="ltr"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('budget'))}</span>
+              <div class="field__wrap field__wrap--suffix"><input class="field__input" name="budget" type="number" step="any" min="0" value="${c.budget==null?'':esc(c.budget)}" dir="ltr"><span class="field__suffix">${esc(t('currency'))}</span></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('stage'))}</span>
+              <div class="field__wrap"><select class="field__select" name="stage">${stageOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('prefArea'))}</span>
+              <div class="field__wrap"><input class="field__input" name="preferred_area" value="${val('preferred_area')}"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('prefType'))}</span>
+              <div class="field__wrap"><select class="field__select" name="preferred_unit_type">${utOpts}</select></div>
+            </label>
+            <label class="field col-2">
+              <span class="field__label">${esc(t('notes'))}</span>
+              <div class="field__wrap"><textarea class="field__textarea" name="notes">${val('notes')}</textarea></div>
+            </label>
+            <div class="form-actions col-2">
+              <button type="button" class="btn btn--secondary" data-action="close-client-form">${esc(t('cancel'))}</button>
+              <button type="submit" class="btn btn--primary" ${state.clientFormBusy?'disabled':''}>${state.clientFormBusy?esc(t('loading')):esc(t('save'))}</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 19.  RENDER: FOLLOW-UPS                                                */
+  /* ===================================================================== */
+  function renderFuRow(f) {
+    const c = clientById(f.client_id);
+    const late = !f.done && new Date(f.due_at) < new Date();
+    return `
+      <div class="furow ${f.done?'is-done':''} ${late?'is-late':''}">
+        <button class="fucheck" data-action="fu-toggle" data-id="${esc(f.id)}" aria-label="${esc(t('confirm'))}">${f.done?'✓':''}</button>
+        <div class="furow__body">
+          <div class="furow__title">${esc(FU_KIND_ICONS[f.kind] || '📌')} ${esc(f.title)}</div>
+          <div class="furow__meta">
+            <span>${esc(fmtDue(f))}</span>
+            ${c ? `<span>· 👤 ${esc(c.name)}</span>` : ''}
+            <span>· ${esc(fuKindLabel(f.kind))}</span>
+          </div>
+          ${f.notes ? `<div class="furow__meta">${esc(f.notes)}</div>` : ''}
+        </div>
+        <button class="furow__edit" data-action="edit-fu" data-id="${esc(f.id)}" aria-label="${esc(t('edit'))}">✏️</button>
+      </div>`;
+  }
+
+  function renderFollowups() {
+    if (state.loading) return `<div class="screen"><div class="spinner"></div></div>`;
+    const now = new Date();
+    const today = localTodayKey();
+    const pending = state.followups.filter(f => !f.done);
+    const overdue = pending.filter(f => new Date(f.due_at) < now && fmtDueDateKey(f) !== today);
+    const todays = pending.filter(f => fmtDueDateKey(f) === today);
+    const upcoming = pending.filter(f => new Date(f.due_at) >= now && fmtDueDateKey(f) !== today);
+    const done = state.followups.filter(f => f.done);
+    const ns = notifStatus();
+    const notifBtn =
+      ns === 'granted' ? `<div class="banner banner--info">🔔 ${esc(t('notifsOn'))}</div>` :
+      ns === 'denied' ? `<div class="banner banner--warning">🔕 ${esc(t('notifBlocked'))}</div>` :
+      ns === 'unsupported' ? '' :
+      `<button class="btn btn--secondary btn--block" data-action="enable-notifs">🔔 ${esc(t('enableNotifs'))}</button>`;
+    const group = (title, arr) => arr.length ? `
+      <div class="fugroup">
+        <div class="fugroup__title">${esc(title)} · ${arr.length}</div>
+        ${arr.map(renderFuRow).join('')}
+      </div>` : '';
+    const empty = !state.followups.length ? `<div class="empty">${esc(t('noFollowups'))}</div>` : '';
+    return `
+      <div class="screen">
+        <button class="backchip" data-action="goto" data-screen="more">← ${esc(t('back'))}</button>
+        ${loadErrorBanner()}
+        ${notifBtn}
+        ${group(t('overdue'), overdue)}
+        ${group(t('today'), todays)}
+        ${group(t('upcoming'), upcoming)}
+        ${empty}
+        ${done.length ? `
+          <button class="backchip" data-action="fu-show-done">${state.fuShowDone ? '▾' : '▸'} ${esc(t('completedGroup'))} · ${done.length}</button>
+          ${state.fuShowDone ? `<div class="fugroup">${done.map(renderFuRow).join('')}</div>` : ''}` : ''}
+      </div>`;
+  }
+
+  function renderFuForm() {
+    const f = state.editingFu || {};
+    const isEdit = !!state.editingFu;
+    const due = f.due_at ? new Date(f.due_at) : null;
+    const dateVal = due ? (due.getFullYear() + '-' + String(due.getMonth()+1).padStart(2,'0') + '-' + String(due.getDate()).padStart(2,'0')) : localTodayKey();
+    const timeVal = due ? (String(due.getHours()).padStart(2,'0') + ':' + String(due.getMinutes()).padStart(2,'0')) : '10:00';
+    const selClient = f.client_id || state.fuPrefillClient || '';
+    const clientOpts = `<option value="">${esc(t('none'))}</option>` + state.clients.map(c =>
+      `<option value="${esc(c.id)}" ${selClient===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+    const kindOpts = FU_KINDS.map(k => `<option value="${k}" ${(f.kind||'call')===k?'selected':''}>${esc(FU_KIND_ICONS[k])} ${esc(fuKindLabel(k))}</option>`).join('');
+    const errBanner = state.fuFormError ? `<div class="banner banner--error col-2">${esc(state.fuFormError)}</div>` : '';
+    const confirmingDel = state.confirmDel && state.confirmDel.kind === 'followup' && isEdit && state.confirmDel.id === f.id;
+    return `
+      <div class="overlay" data-overlay="fu-form">
+        <div class="modal" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <h2 class="modal__title">${esc(isEdit ? t('editFollowup') : t('addFollowup'))}</h2>
+            <button class="modal__close" data-action="close-fu-form" aria-label="${esc(t('cancel'))}">×</button>
+          </div>
+          <form class="form-grid" data-action="save-fu">
+            ${errBanner}
+            <label class="field col-2">
+              <span class="field__label">${esc(t('fuTitle'))}</span>
+              <div class="field__wrap"><input class="field__input" name="title" value="${esc(f.title||'')}" required></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('client'))}</span>
+              <div class="field__wrap"><select class="field__select" name="client_id">${clientOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('fuKind'))}</span>
+              <div class="field__wrap"><select class="field__select" name="kind">${kindOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('dueDate'))}</span>
+              <div class="field__wrap"><input class="field__input" name="due_date" type="date" value="${esc(dateVal)}" dir="ltr" required></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('dueTime'))}</span>
+              <div class="field__wrap"><input class="field__input" name="due_time" type="time" value="${esc(timeVal)}" dir="ltr" required></div>
+            </label>
+            <label class="field col-2">
+              <span class="field__label">${esc(t('notes'))}</span>
+              <div class="field__wrap"><textarea class="field__textarea" name="notes">${esc(f.notes||'')}</textarea></div>
+            </label>
+            <div class="form-actions col-2">
+              ${isEdit ? (confirmingDel
+                ? `<button type="button" class="btn btn--danger" data-action="confirm-del">${esc(t('confirmDeleteFu'))} — ${esc(t('confirm'))}</button>`
+                : `<button type="button" class="btn btn--danger" data-action="ask-del" data-kind="followup" data-id="${esc(f.id)}">🗑 ${esc(t('del'))}</button>`) : ''}
+              <button type="button" class="btn btn--secondary" data-action="close-fu-form">${esc(t('cancel'))}</button>
+              <button type="submit" class="btn btn--primary" ${state.fuFormBusy?'disabled':''}>${state.fuFormBusy?esc(t('loading')):esc(t('save'))}</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 20.  RENDER: DEALS KANBAN                                              */
+  /* ===================================================================== */
+  function renderDeals() {
+    if (state.loading) return `<div class="screen"><div class="spinner"></div></div>`;
+    if (!state.deals.length) {
+      return `<div class="screen">${loadErrorBanner()}<div class="empty">${esc(t('noDeals'))}</div></div>`;
+    }
+    const cols = DEAL_STAGES.map(stg => {
+      const deals = state.deals.filter(d => d.stage === stg);
+      const sum = deals.reduce((s, d) => s + num(d.value), 0);
+      return `
+        <div class="kcol">
+          <div class="kcol__head">
+            <span><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${DEAL_STAGE_COLORS[stg]};margin-inline-end:6px"></span>${esc(dealStageLabel(stg))}</span>
+            <span class="kcol__count">${deals.length}</span>
+          </div>
+          <div class="kcol__sum">${sum ? esc(fmtCompact(sum)) + ' ' + esc(t('currency')) : '—'}</div>
+          <div class="kcol__cards">
+            ${deals.map(d => renderDealCard(d, stg)).join('')}
+          </div>
+        </div>`;
+    }).join('');
+    return `
+      <div class="screen">
+        ${loadErrorBanner()}
+        <div class="kanban">${cols}</div>
+      </div>`;
+  }
+
+  function renderDealCard(d, stg) {
+    const c = clientById(d.client_id);
+    const p = propById(d.property_id);
+    const idx = DEAL_STAGES.indexOf(stg);
+    return `
+      <div class="kcard" style="--stage-c:${DEAL_STAGE_COLORS[stg]}">
+        <div class="kcard__name" data-action="edit-deal" data-id="${esc(d.id)}">${esc(c ? c.name : (d.title || '—'))}</div>
+        <div class="kcard__sub">${esc(p ? propLabel(p) : (d.title || ''))}${d.agent ? ' · ' + esc(d.agent) : ''}</div>
+        <div class="kcard__row">
+          <span class="kcard__val">${esc(fmtCompact(num(d.value)))} ${esc(t('currency'))}</span>
+          <span class="kmove" dir="ltr">
+            <button data-action="move-deal" data-id="${esc(d.id)}" data-dir="-1" ${idx===0?'disabled':''} aria-label="${esc(t('moveBack'))}">◀</button>
+            <button data-action="move-deal" data-id="${esc(d.id)}" data-dir="1" ${idx===DEAL_STAGES.length-1?'disabled':''} aria-label="${esc(t('moveNext'))}">▶</button>
+          </span>
+        </div>
+      </div>`;
+  }
+
+  function renderDealForm() {
+    const d = state.editingDeal || {};
+    const isEdit = !!state.editingDeal;
+    const clientOpts = `<option value="">${esc(t('none'))}</option>` + state.clients.map(c =>
+      `<option value="${esc(c.id)}" ${d.client_id===c.id?'selected':''}>${esc(c.name)}</option>`).join('');
+    const propOpts = `<option value="">${esc(t('none'))}</option>` + state.properties.map(p =>
+      `<option value="${esc(p.id)}" data-price="${esc(p.price)}" ${d.property_id===p.id?'selected':''}>${esc(propLabel(p))}</option>`).join('');
+    const stageOpts = DEAL_STAGES.map(s => `<option value="${s}" ${(d.stage||'lead')===s?'selected':''}>${esc(dealStageLabel(s))}</option>`).join('');
+    const errBanner = state.dealFormError ? `<div class="banner banner--error col-2">${esc(state.dealFormError)}</div>` : '';
+    const confirmingDel = state.confirmDel && state.confirmDel.kind === 'deal' && isEdit && state.confirmDel.id === d.id;
+    return `
+      <div class="overlay" data-overlay="deal-form">
+        <div class="modal" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <h2 class="modal__title">${esc(isEdit ? t('editDeal') : t('newDeal'))}</h2>
+            <button class="modal__close" data-action="close-deal-form" aria-label="${esc(t('cancel'))}">×</button>
+          </div>
+          <form class="form-grid" data-action="save-deal">
+            ${errBanner}
+            <label class="field">
+              <span class="field__label">${esc(t('client'))}</span>
+              <div class="field__wrap"><select class="field__select" name="client_id">${clientOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('property'))}</span>
+              <div class="field__wrap"><select class="field__select" name="property_id" data-deal-prop>${propOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('dealValue'))}</span>
+              <div class="field__wrap field__wrap--suffix"><input class="field__input" name="value" id="deal-value" type="number" step="any" min="0" value="${d.value==null?'':esc(d.value)}" dir="ltr" required><span class="field__suffix">${esc(t('currency'))}</span></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('agentName'))}</span>
+              <div class="field__wrap"><input class="field__input" name="agent" value="${esc(d.agent||'')}"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('commPct'))} %</span>
+              <div class="field__wrap"><input class="field__input" name="commission_pct" type="number" step="any" min="0" value="${d.commission_pct==null?'2.5':esc(d.commission_pct)}" dir="ltr"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('stage'))}</span>
+              <div class="field__wrap"><select class="field__select" name="stage">${stageOpts}</select></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('agentShare'))} %</span>
+              <div class="field__wrap"><input class="field__input" name="agent_share_pct" type="number" step="any" min="0" max="100" value="${d.agent_share_pct==null?'40':esc(d.agent_share_pct)}" dir="ltr"></div>
+            </label>
+            <label class="field">
+              <span class="field__label">${esc(t('companyShare'))} %</span>
+              <div class="field__wrap"><input class="field__input" name="company_share_pct" type="number" step="any" min="0" max="100" value="${d.company_share_pct==null?'60':esc(d.company_share_pct)}" dir="ltr"></div>
+            </label>
+            <div class="form-actions col-2">
+              ${isEdit ? (confirmingDel
+                ? `<button type="button" class="btn btn--danger" data-action="confirm-del">${esc(t('confirmDeleteDeal'))} — ${esc(t('confirm'))}</button>`
+                : `<button type="button" class="btn btn--danger" data-action="ask-del" data-kind="deal" data-id="${esc(d.id)}">🗑 ${esc(t('del'))}</button>`) : ''}
+              <button type="button" class="btn btn--secondary" data-action="close-deal-form">${esc(t('cancel'))}</button>
+              <button type="submit" class="btn btn--primary" ${state.dealFormBusy?'disabled':''}>${state.dealFormBusy?esc(t('loading')):esc(t('save'))}</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 21.  RENDER: MORE MENU                                                 */
+  /* ===================================================================== */
+  function renderMore() {
+    const dueToday = state.followups.filter(f => !f.done && fmtDueDateKey(f) === localTodayKey()).length;
+    const items = [
+      { screen: 'followups',  ic: '⏰', title: t('followups'), desc: t('followupsDesc'), badge: dueToday || null },
+      { screen: 'calculator', ic: '🧮', title: t('calc'), desc: t('calcDesc') },
+      { screen: 'history',    ic: '💰', title: t('history'), desc: t('historyDesc') },
+      { screen: 'analytics',  ic: '📈', title: t('analytics'), desc: t('analyticsDesc') },
+    ];
+    return `
+      <div class="screen">
+        <div class="menu">
+          ${items.map(it => `
+            <button class="menuitem" data-action="goto" data-screen="${it.screen}">
+              <span class="menuitem__ic" aria-hidden="true">${it.ic}</span>
+              <span class="menuitem__tx">
+                <span class="menuitem__t" style="display:block">${esc(it.title)}</span>
+                <span class="menuitem__d">${esc(it.desc)}</span>
+              </span>
+              ${it.badge ? `<span class="menuitem__badge">${esc(it.badge)}</span>` : ''}
+            </button>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 22.  RENDER: COMMISSION CALCULATOR                                     */
+  /* ===================================================================== */
+  function renderCalculator() {
+    const ci = state.calc;
+    const propOpts = `<option value="">${esc(t('none'))}</option>` + state.properties.map(p =>
+      `<option value="${esc(p.id)}" ${ci.propId===p.id?'selected':''}>${esc(propLabel(p))} — ${esc(fmtCompact(num(p.price)))}</option>`).join('');
+    const calcInput = (label, name, value, suffix) => `
+      <label class="field">
+        <span class="field__label">${esc(label)}</span>
+        <div class="field__wrap field__wrap--suffix">
+          <input class="field__input" data-calc="${name}" type="number" step="any" min="0" value="${esc(value)}" dir="ltr" inputmode="decimal">
+          <span class="field__suffix">${esc(suffix)}</span>
+        </div>
+      </label>`;
+    return `
+      <div class="screen">
+        <button class="backchip" data-action="goto" data-screen="more">← ${esc(t('back'))}</button>
+        <section class="panel">
+          <h3 class="panel__title">${esc(t('inputs'))}</h3>
+          <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+            <label class="field">
+              <span class="field__label">${esc(t('pickProperty'))}</span>
+              <div class="field__wrap"><select class="field__select" data-action-change="calc-prop">${propOpts}</select></div>
+            </label>
+            ${calcInput(t('propPrice'), 'price', ci.price, t('currency'))}
+            <div class="form-grid">
+              ${calcInput(t('commPct'), 'pct', ci.pct, '%')}
+              ${calcInput(t('agentShare'), 'agentShare', ci.agentShare, '%')}
+              ${calcInput(t('companyShare'), 'companyShare', ci.companyShare, '%')}
+            </div>
+          </div>
+        </section>
+
+        <section class="panel panel--success">
+          <h3 class="panel__title">${esc(t('results'))}</h3>
+          <div id="calc-results">${renderCalcResults()}</div>
+        </section>
+
+        <section class="panel">
+          <h3 class="panel__title">${esc(t('quoteTitle'))}</h3>
+          <button class="btn btn--primary btn--block" data-action="open-quote">🧾 ${esc(t('quote'))}</button>
+        </section>
+      </div>`;
+  }
+
+  function renderCalcResults() {
+    const ci = state.calc;
+    const r = calcCommission(ci.price, ci.pct, ci.agentShare, ci.companyShare);
+    const warn = Math.abs(num(ci.agentShare) + num(ci.companyShare) - 100) > 0.001
+      ? `<div class="banner banner--warning">⚠ ${esc(t('shareWarn'))}</div>` : '';
+    return `
+      <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+        ${warn}
+        <div class="crow crow--total">
+          <div class="tt__k">${esc(t('totalCommission'))} (${esc(num(ci.pct))}%)</div>
+          <div class="tt__v">${esc(fmtMoney(r.total))}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+          <div class="crow crow--subtotal" style="border-inline-start-color:var(--success)">
+            <div class="st__k">${esc(t('agentCommission'))} (${esc(num(ci.agentShare))}%)</div>
+            <div class="st__v">${esc(fmtMoney(r.agent))}</div>
+          </div>
+          <div class="crow crow--subtotal">
+            <div class="st__k">${esc(t('companyCommission'))} (${esc(num(ci.companyShare))}%)</div>
+            <div class="st__v">${esc(fmtMoney(r.company))}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 23.  RENDER: COMMISSION HISTORY + EXPORTS                              */
+  /* ===================================================================== */
+  function historyRows() {
+    return closedDeals().map(d => {
+      const c = clientById(d.client_id);
+      const p = propById(d.property_id);
+      const comm = dealCommission(d);
+      return {
+        d, comm,
+        month: String(d.closed_at).slice(0, 7),
+        clientName: c ? c.name : (d.title || '—'),
+        agent: (d.agent || '').trim() || '—',
+        project: p ? (p.project || p.code) : '—',
+      };
+    }).filter(r =>
+      (state.histMonth === 'all' || r.month === state.histMonth) &&
+      (state.histAgent === 'all' || r.agent === state.histAgent) &&
+      (state.histProject === 'all' || r.project === state.histProject)
+    ).sort((a, b) => String(b.d.closed_at).localeCompare(String(a.d.closed_at)));
+  }
+
+  function renderHistory() {
+    if (state.loading) return `<div class="screen"><div class="spinner"></div></div>`;
+    const all = closedDeals();
+    const months = [...new Set(all.map(d => String(d.closed_at).slice(0, 7)))].sort().reverse();
+    const agents = [...new Set(all.map(d => (d.agent || '').trim() || '—'))].sort();
+    const projects = [...new Set(all.map(d => { const p = propById(d.property_id); return p ? (p.project || p.code) : '—'; }))].sort();
+    const rows = historyRows();
+    const sumValue = rows.reduce((s, r) => s + num(r.d.value), 0);
+    const sumTotal = rows.reduce((s, r) => s + r.comm.total, 0);
+    const sumAgent = rows.reduce((s, r) => s + r.comm.agent, 0);
+    const filterSel = (label, key, current, options, fmt) => `
+      <label class="field" style="flex:1;min-width:100px">
+        <span class="field__label" style="font-size:var(--text-xs)">${esc(label)}</span>
+        <div class="field__wrap"><select class="field__select" data-action-change="hist-filter" data-key="${key}" style="padding:8px 10px;font-size:var(--text-sm)">
+          <option value="all">${esc(t('all'))}</option>
+          ${options.map(o => `<option value="${esc(o)}" ${current===o?'selected':''}>${esc(fmt ? fmt(o) : o)}</option>`).join('')}
+        </select></div>
+      </label>`;
+    return `
+      <div class="screen">
+        <button class="backchip" data-action="goto" data-screen="more">← ${esc(t('back'))}</button>
+        <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+          ${filterSel(t('monthF'), 'histMonth', state.histMonth, months, monthLabel)}
+          ${filterSel(t('agentF'), 'histAgent', state.histAgent, agents)}
+          ${filterSel(t('projectF'), 'histProject', state.histProject, projects)}
+        </div>
+        <div class="statrow statrow--4">
+          <div class="statcard"><div class="statcard__value">${rows.length}</div><div class="statcard__label">${esc(t('dealsCount'))}</div></div>
+          <div class="statcard"><div class="statcard__value">${esc(fmtCompact(sumValue))}</div><div class="statcard__label">${esc(t('totalValue'))}</div></div>
+          <div class="statcard statcard--success"><div class="statcard__value">${esc(fmtCompact(sumTotal))}</div><div class="statcard__label">${esc(t('totalCommission'))}</div></div>
+          <div class="statcard statcard--success"><div class="statcard__value">${esc(fmtCompact(sumAgent))}</div><div class="statcard__label">${esc(t('agentCommission'))}</div></div>
+        </div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="btn btn--secondary btn--sm" style="flex:1" data-action="export-csv">📊 ${esc(t('exportCsv'))}</button>
+          <button class="btn btn--secondary btn--sm" style="flex:1" data-action="export-pdf">📄 ${esc(t('exportPdf'))}</button>
+        </div>
+        ${rows.length ? `<div class="hlist">${rows.map(r => `
+          <div class="hrow">
+            <div class="hrow__top">
+              <span class="hrow__name">${esc(r.clientName)} — ${esc(r.project)}</span>
+              <span class="hrow__date">${esc(r.d.closed_at)}</span>
+            </div>
+            <div class="hrow__grid">
+              <div><div class="hcell__k">${esc(t('valueW'))}</div><div class="hcell__v">${esc(fmtCompact(num(r.d.value)))}</div></div>
+              <div><div class="hcell__k">${esc(t('totalCommission'))}</div><div class="hcell__v">${esc(fmtCompact(r.comm.total))}</div></div>
+              <div><div class="hcell__k">${esc(t('agentCommission'))}</div><div class="hcell__v">${esc(fmtCompact(r.comm.agent))}</div></div>
+              <div><div class="hcell__k">${esc(t('agentF'))}</div><div class="hcell__v">${esc(r.agent)}</div></div>
+            </div>
+          </div>`).join('')}</div>` : `<div class="empty">${esc(t('noHistory'))}</div>`}
+      </div>`;
+  }
+
+  function exportHistoryCsv() {
+    const rows = historyRows();
+    const head = [t('dateW'), t('client'), t('projectF'), t('agentF'), t('valueW'), t('commPct') + ' %', t('totalCommission'), t('agentCommission'), t('companyCommission')];
+    const q = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+    const lines = [head.map(q).join(',')];
+    rows.forEach(r => {
+      lines.push([r.d.closed_at, r.clientName, r.project, r.agent, num(r.d.value),
+        num(r.d.commission_pct), Math.round(r.comm.total), Math.round(r.comm.agent), Math.round(r.comm.company)].map(q).join(','));
+    });
+    // BOM so Excel opens Arabic text as UTF-8.
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ringroads-commissions-' + (state.histMonth === 'all' ? 'all' : state.histMonth) + '.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast(t('saved'));
+  }
+
+  function exportHistoryPdf() {
+    const rows = historyRows();
+    const sumTotal = rows.reduce((s, r) => s + r.comm.total, 0);
+    const sumAgent = rows.reduce((s, r) => s + r.comm.agent, 0);
+    const sumCompany = rows.reduce((s, r) => s + r.comm.company, 0);
+    const filters = [
+      state.histMonth !== 'all' ? t('monthF') + ': ' + monthLabel(state.histMonth) : null,
+      state.histAgent !== 'all' ? t('agentF') + ': ' + state.histAgent : null,
+      state.histProject !== 'all' ? t('projectF') + ': ' + state.histProject : null,
+    ].filter(Boolean).join(' · ') || t('all');
+    const html = `<!DOCTYPE html><html lang="${state.lang}" dir="${L().dir}"><head><meta charset="utf-8">
+      <title>${esc(t('reportTitle'))} — Ring Roads</title>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+      <style>
+        body { font-family: 'Cairo', sans-serif; color: #1a2433; margin: 32px; }
+        h1 { color: #0f4c81; font-size: 22px; margin: 0; }
+        .sub { color: #5b6b7f; font-size: 12px; margin: 4px 0 20px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th { background: #eef5fc; color: #0f4c81; text-align: start; padding: 8px; border-bottom: 2px solid #2e7cd6; }
+        td { padding: 7px 8px; border-bottom: 1px solid #e1e8f0; }
+        tfoot td { font-weight: 700; background: #f5f8fc; border-top: 2px solid #0f4c81; }
+        @media print { body { margin: 12mm; } }
+      </style></head><body>
+      <h1>🏢 Ring Roads — ${esc(t('reportTitle'))}</h1>
+      <div class="sub">${esc(t('generatedOn'))}: ${esc(new Date().toISOString().slice(0,10))} · ${esc(t('filteredBy'))}: ${esc(filters)}</div>
+      <table>
+        <thead><tr>
+          <th>${esc(t('dateW'))}</th><th>${esc(t('client'))}</th><th>${esc(t('projectF'))}</th><th>${esc(t('agentF'))}</th>
+          <th>${esc(t('valueW'))}</th><th>%</th><th>${esc(t('totalCommission'))}</th><th>${esc(t('agentCommission'))}</th><th>${esc(t('companyCommission'))}</th>
+        </tr></thead>
+        <tbody>
+          ${rows.map(r => `<tr>
+            <td>${esc(r.d.closed_at)}</td><td>${esc(r.clientName)}</td><td>${esc(r.project)}</td><td>${esc(r.agent)}</td>
+            <td>${esc(groupNum(num(r.d.value)))}</td><td>${esc(num(r.d.commission_pct))}%</td>
+            <td>${esc(groupNum(r.comm.total))}</td><td>${esc(groupNum(r.comm.agent))}</td><td>${esc(groupNum(r.comm.company))}</td>
+          </tr>`).join('')}
+        </tbody>
+        <tfoot><tr>
+          <td colspan="6">${esc(t('total'))} (${rows.length} ${esc(t('dealsWord'))})</td>
+          <td>${esc(groupNum(sumTotal))}</td><td>${esc(groupNum(sumAgent))}</td><td>${esc(groupNum(sumCompany))}</td>
+        </tr></tfoot>
+      </table>
+      <script>window.addEventListener('load',function(){setTimeout(function(){window.print()},350)})<\/script>
+      </body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) { toast('Popup blocked'); return; }
+    w.document.write(html);
+    w.document.close();
+  }
+
+  /* ===================================================================== */
+  /* 24.  RENDER: ANALYTICS                                                 */
+  /* ===================================================================== */
+  function renderAnalytics() {
+    if (state.loading) return `<div class="screen"><div class="spinner"></div></div>`;
+    const series = monthlySalesSeries(12);
+    const hasSales = series.some(s => s.value > 0);
+    const totalDeals = state.deals.length;
+    const closedCount = state.deals.filter(d => d.stage === 'closed').length;
+    const conv = totalDeals ? Math.round(100 * closedCount / totalDeals) : 0;
+    const closed = closedDeals();
+    const funnel = DEAL_STAGES.map((stg, i) => {
+      // Funnel counts deals at-or-past each stage, so it narrows monotonically.
+      const count = state.deals.filter(d => DEAL_STAGES.indexOf(d.stage) >= i).length;
+      return { key: dealStageLabel(stg), value: count };
+    });
+    const revenue = groupSum(closed, d => { const p = propById(d.property_id); return p ? (p.project || p.code) : (d.title || '—'); }, d => num(d.value)).slice(0, 5);
+    const devs = groupSum(closed, d => { const p = propById(d.property_id); return p && p.developer ? p.developer : null; }, d => num(d.value)).slice(0, 5);
+    const locs = groupSum(closed, d => dealArea(d), d => num(d.value)).slice(0, 5);
+    return `
+      <div class="screen">
+        <button class="backchip" data-action="goto" data-screen="more">← ${esc(t('back'))}</button>
+        <section class="panel panel--brand">
+          <h3 class="panel__title">📊 ${esc(t('salesByMonth'))}</h3>
+          ${hasSales ? svgBarChart(series.map(s => ({ label: s.label, value: s.value, tip: monthLabel(s.key) + ' — ' + fmtMoney(s.value) })), { width: 420 })
+                     : `<div class="empty">${esc(t('noSalesData'))}</div>`}
+        </section>
+
+        <section class="panel panel--success">
+          <h3 class="panel__title">🎯 ${esc(t('convRate'))}</h3>
+          <div style="display:flex;align-items:baseline;gap:var(--space-3)">
+            <div style="font-size:40px;font-weight:var(--weight-extra);color:var(--success);line-height:1">${conv}%</div>
+            <div style="font-size:var(--text-sm);color:var(--text-muted)">${esc(t('convCaption'))} (${closedCount}/${totalDeals || 0})</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3 class="panel__title">⏬ ${esc(t('funnelTitle'))}</h3>
+          ${totalDeals ? hbarList(funnel, (it) => String(it.value)) : `<div class="empty">${esc(t('noData'))}</div>`}
+        </section>
+
+        <section class="panel">
+          <h3 class="panel__title">🏗️ ${esc(t('revenueByProject'))}</h3>
+          ${hbarList(revenue)}
+        </section>
+
+        <section class="panel">
+          <h3 class="panel__title">🏢 ${esc(t('topDevelopers'))}</h3>
+          ${hbarList(devs)}
+        </section>
+
+        <section class="panel">
+          <h3 class="panel__title">📍 ${esc(t('topLocations'))}</h3>
+          ${hbarList(locs)}
+        </section>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 25.  RENDER: AI MODALS                                                 */
+  /* ===================================================================== */
+  function renderMatchCard(m) {
+    const p = m.p;
+    return `
+      <div class="match">
+        <div class="match__top">
+          <span class="match__name">${esc(p.icon || '🏠')} ${esc(propLabel(p))}</span>
+          <span class="match__pct">${m.score}% ${esc(t('matchWord'))}</span>
+        </div>
+        <div class="match__sub">${esc(pv(p,'address'))} · ${esc(fmtPrice(p))} · <span class="badge badge--${esc(p.status)}">${esc(statusLabel(p.status))}</span></div>
+        <div class="reasons">${m.reasons.map(r => `<span class="reason">${esc(r)}</span>`).join('')}</div>
+      </div>`;
+  }
+
+  function renderAiModal() {
+    const ai = state.aiOpen;
+    let title = '', body = '';
+    if (ai.kind === 'match') {
+      const c = clientById(ai.id);
+      if (!c) return '';
+      const matches = aiMatchesForClient(c);
+      title = '✨ ' + t('aiMatches');
+      body = `<div style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-3)">${esc(t('recommendFor'))} <b style="color:var(--text-heading)">${esc(c.name)}</b>${c.budget ? ' · ' + esc(fmtCompact(num(c.budget))) + ' ' + esc(t('currency')) : ''}</div>`
+        + (matches.length ? matches.map(renderMatchCard).join('') : `<div class="empty">${esc(t('noMatches'))}</div>`);
+    } else if (ai.kind === 'similar') {
+      const p = propById(ai.id);
+      if (!p) return '';
+      const sims = aiSimilarProps(p);
+      title = '✨ ' + t('aiSimilar');
+      body = `<div style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-3)">${esc(propLabel(p))} · ${esc(fmtPrice(p))}</div>`
+        + (sims.length ? sims.map(renderMatchCard).join('') : `<div class="empty">${esc(t('noSimilar'))}</div>`);
+    } else if (ai.kind === 'growth') {
+      const p = propById(ai.id);
+      if (!p) return '';
+      const g = aiGrowthForecast(p);
+      title = '📈 ' + t('aiGrowth');
+      body = `
+        <div style="font-size:var(--text-sm);color:var(--text-muted);margin-bottom:var(--space-3)">${esc(propLabel(p))} · ${esc(fmtPrice(p))}</div>
+        <div class="crow crow--total" style="margin-bottom:var(--space-3)">
+          <div class="tt__k">${esc(t('growthEstimate'))}</div>
+          <div class="tt__v">+${g.low}–${g.high}%</div>
+        </div>
+        <div class="crow crow--subtotal" style="margin-bottom:var(--space-3);border-inline-start-color:var(--success)">
+          <div class="st__k">${esc(t('growthIn5'))} (+${g.mid}%/yr)</div>
+          <div class="st__v">${esc(fmtMoney(g.in5))}</div>
+        </div>
+        ${g.reasons.map(r => `
+          <div class="crow">
+            <span class="crow__label">${esc(r.k)}</span>
+            <span class="crow__amt" style="color:var(--success)">${esc(r.v)}</span>
+          </div>`).join('')}
+        <div class="banner banner--info" style="margin-top:var(--space-3)">ℹ️ ${esc(t('growthDisclaimer'))}</div>`;
+    }
+    return `
+      <div class="overlay" data-overlay="ai">
+        <div class="modal" role="dialog" aria-modal="true">
+          <div class="modal__head">
+            <h2 class="modal__title">${title}</h2>
+            <button class="modal__close" data-action="close-ai" aria-label="${esc(t('close'))}">×</button>
+          </div>
+          ${body}
+        </div>
+      </div>`;
+  }
+
+  /* ===================================================================== */
+  /* 26.  RENDER: QUOTE MODAL + html2canvas export                          */
+  /* ===================================================================== */
+  function quoteTemplateHTML() {
+    const p = propById(state.calc.propId);
+    const ci = state.calc;
+    const r = calcCommission(ci.price, ci.pct, ci.agentShare, ci.companyShare);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const cur = t('currency');
+    const propBlock = p ? `
+      <div class="quote__section-title">${esc(t('propertyDetails'))}</div>
+      <div class="quote__prop">
+        <span class="quote__prop-icon">${esc(p.icon||'🏠')}</span>
+        <div>
+          <div class="quote__prop-code">${esc(propLabel(p))}</div>
+          <div class="quote__prop-addr" dir="ltr">${esc(p.address_en||'')}</div>
+          <div class="quote__prop-addr" dir="rtl">${esc(p.address_ar||'')}</div>
+        </div>
+        <div class="quote__prop-price">
+          <div class="p">${esc(groupNum(p.price) + ' ' + cur + (p.type==='rent'?t('month'):''))}</div>
+          <span class="badge badge--${esc(p.status)}">${esc(statusLabel(p.status))}</span>
+        </div>
+      </div>
+      <div class="quote__quick">
+        <div><div class="k">${esc(t('beds'))}</div><div class="v">${esc(p.beds)}</div></div>
+        <div><div class="k">${esc(t('baths'))}</div><div class="v">${esc(p.baths)}</div></div>
+        <div><div class="k">${esc(t('unitType'))}</div><div class="v">${esc(unitTypeLabel(p.unit_type))}</div></div>
+        <div><div class="k">${esc(t('delivery'))}</div><div class="v">${esc(p.delivery || '—')}</div></div>
+      </div>` : '';
+    const foot = p ? `<span>${esc(t('preparedBy'))}: ${esc(pv(p,'agent'))}</span>` : '<span></span>';
+    return `
+      <div class="quote" dir="${L().dir}">
+        <div class="quote__top">
+          <div class="quote__brand">🏢 Ring Roads · رينج رودز</div>
+          <div class="quote__date">${esc(dateStr)}</div>
+        </div>
+        ${propBlock}
+        <div class="quote__section-title">${esc(t('commissionQuote'))}</div>
+        <div class="crow crow--subtotal" style="margin-bottom:10px">
+          <div class="st__k">${esc(t('propPrice'))}</div>
+          <div class="st__v">${esc(fmtMoney(num(ci.price)))}</div>
+        </div>
+        <div class="crow">
+          <span class="crow__label">${esc(t('agentCommission'))}</span>
+          <span class="crow__pct">${esc(num(ci.agentShare))}%</span>
+          <span class="crow__amt">${esc(fmtMoney(r.agent))}</span>
+        </div>
+        <div class="crow">
+          <span class="crow__label">${esc(t('companyCommission'))}</span>
+          <span class="crow__pct">${esc(num(ci.companyShare))}%</span>
+          <span class="crow__amt">${esc(fmtMoney(r.company))}</span>
+        </div>
+        <div class="crow crow--total" style="margin-top:12px">
+          <div class="tt__k">${esc(t('totalCommission'))} (${esc(num(ci.pct))}%)</div>
+          <div class="tt__v">${esc(fmtMoney(r.total))}</div>
+        </div>
+        <div class="quote__foot">${foot}<span>${esc(dateStr)}</span></div>
+      </div>`;
+  }
+
+  function renderQuoteModal() {
+    return `
+      <div class="overlay" data-overlay="quote">
+        <div class="modal" role="dialog" aria-modal="true" style="max-width:560px">
+          <div class="modal__head">
+            <h2 class="modal__title">${esc(t('quoteTitle'))}</h2>
+            <button class="modal__close" data-action="close-quote" aria-label="${esc(t('cancel'))}">×</button>
+          </div>
+          <div style="overflow:auto;background:var(--surface-app);border-radius:var(--radius-sm);padding:var(--space-3)">
+            ${quoteTemplateHTML()}
+          </div>
+          <div class="form-actions">
+            <button class="btn btn--secondary" data-action="close-quote">${esc(t('cancel'))}</button>
+            <button class="btn btn--primary" data-action="download-quote">⬇ ${esc(t('downloadPng'))}</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  async function downloadQuotePng() {
+    const stage = document.getElementById('quote-stage');
+    stage.innerHTML = quoteTemplateHTML();
+    const node = stage.firstElementChild;
+    try {
+      if (document.fonts) {
+        try { await document.fonts.load('700 24px Cairo'); await document.fonts.load('400 14px Cairo'); } catch (_) {}
+        await document.fonts.ready;
+      }
+      const canvas = await html2canvas(node, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+      const p = propById(state.calc.propId);
+      const name = 'ring-roads-quote-' + (p ? p.code : 'commission') + '-' + Date.now() + '.png';
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = name; a.click();
+        URL.revokeObjectURL(url);
+        toast(t('saved'));
+      }, 'image/png');
+    } catch (err) {
+      toast('PNG export failed: ' + err.message);
+    } finally {
+      stage.innerHTML = '';
+    }
+  }
+
+  /* ===================================================================== */
+  /* 27.  NOTIFICATIONS (browser Notification API — fires while app open)   */
+  /* ===================================================================== */
+  function notifStatus() {
+    if (!('Notification' in window)) return 'unsupported';
+    return Notification.permission; // 'default' | 'granted' | 'denied'
+  }
+  async function enableNotifs() {
+    if (!('Notification' in window)) { toast(t('notifUnsupported')); return; }
+    const p = await Notification.requestPermission();
+    if (p === 'granted') { toast(t('notifsOn')); checkDueFollowups(); }
+    renderRoot();
+  }
+  function checkDueFollowups() {
+    if (notifStatus() !== 'granted') return;
+    const now = Date.now();
+    let seen;
+    try { seen = JSON.parse(localStorage.getItem('ringroads_notified') || '[]'); } catch (_) { seen = []; }
+    let changed = false;
+    state.followups.forEach(f => {
+      if (f.done || seen.includes(f.id)) return;
+      const due = new Date(f.due_at).getTime();
+      if (isNaN(due)) return;
+      // Notify from 15 min before due until 60 min after (once per follow-up).
+      if (due - now < 15 * 60000 && now - due < 60 * 60000) {
+        const c = clientById(f.client_id);
+        try {
+          new Notification('Ring Roads — ' + f.title, {
+            body: (c ? c.name + ' · ' : '') + fmtDue(f),
+            tag: 'ringroads-fu-' + f.id,
+          });
+        } catch (_) { /* some browsers require a service worker */ }
+        seen.push(f.id);
+        changed = true;
+      }
+    });
+    if (changed) localStorage.setItem('ringroads_notified', JSON.stringify(seen.slice(-200)));
+  }
+
+  /* ===================================================================== */
+  /* 28.  EVENT HANDLERS (delegated on #app-root)                           */
+  /* ===================================================================== */
+  const actions = {
+    lang: (el) => {
+      state.lang = el.dataset.lang;
+      localStorage.setItem('ringroads_lang', state.lang);
+      renderRoot();
+    },
+    theme: () => {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('ringroads_theme', state.theme);
+      renderRoot();
+    },
+    tab: (el) => { state.screen = el.dataset.tab; state.confirmDel = null; renderRoot(); },
+    goto: (el) => { state.screen = el.dataset.screen; state.confirmDel = null; renderRoot(); },
+    logout: () => { handleLogout(); },
+    'auth-toggle': () => { state.authMode = state.authMode === 'login' ? 'signup' : 'login'; state.authError = null; state.authInfo = null; renderRoot(); },
+
+    // --- generic delete confirmation ---
+    'ask-del': (el) => { state.confirmDel = { kind: el.dataset.kind, id: el.dataset.id }; renderRoot(); },
+    'cancel-del': () => { state.confirmDel = null; renderRoot(); },
+    'confirm-del': () => { doConfirmedDelete(); },
+
+    // --- properties ---
+    'toggle-property': (el) => {
+      const id = el.dataset.id;
+      state.expandedId = state.expandedId === id ? null : id;
+      state.confirmDel = null;
+      renderRoot();
+    },
+    'add-property': () => { state.editing = null; state.formError = null; state.formOpen = true; renderRoot(); },
+    'edit-property': (el) => {
+      state.editing = propById(el.dataset.id);
+      state.formError = null; state.formOpen = true; renderRoot();
+    },
+    'close-form': () => { state.formOpen = false; state.editing = null; state.formError = null; renderRoot(); },
+    'set-type': (el) => {
+      const wrap = el.closest('.field');
+      wrap.querySelectorAll('.segmented button').forEach(b => b.classList.toggle('on', b === el));
+      const hidden = wrap.querySelector('input[name="type"]');
+      if (hidden) hidden.value = el.dataset.type;
+    },
+    'prop-filter': (el) => { state.propFilter = el.dataset.filter; renderRoot(); },
+    'open-lightbox': (el) => { state.lightboxUrl = el.dataset.url; renderRoot(); },
+    'close-lightbox': () => { state.lightboxUrl = null; renderRoot(); },
+
+    // --- clients ---
+    'toggle-client': (el) => {
+      const id = el.dataset.id;
+      state.expandedClientId = state.expandedClientId === id ? null : id;
+      state.confirmDel = null;
+      renderRoot();
+    },
+    'add-client': () => { state.editingClient = null; state.clientFormError = null; state.clientFormOpen = true; renderRoot(); },
+    'edit-client': (el) => {
+      state.editingClient = clientById(el.dataset.id);
+      state.clientFormError = null; state.clientFormOpen = true; renderRoot();
+    },
+    'close-client-form': () => { state.clientFormOpen = false; state.editingClient = null; state.clientFormError = null; renderRoot(); },
+    'client-filter': (el) => { state.clientFilter = el.dataset.filter; renderRoot(); },
+
+    // --- follow-ups ---
+    'add-fu': () => { state.editingFu = null; state.fuPrefillClient = ''; state.fuFormError = null; state.fuFormOpen = true; renderRoot(); },
+    'add-fu-for': (el) => { state.editingFu = null; state.fuPrefillClient = el.dataset.id; state.fuFormError = null; state.fuFormOpen = true; renderRoot(); },
+    'edit-fu': (el) => {
+      state.editingFu = state.followups.find(f => f.id === el.dataset.id) || null;
+      state.fuFormError = null; state.fuFormOpen = true; renderRoot();
+    },
+    'close-fu-form': () => { state.fuFormOpen = false; state.editingFu = null; state.fuFormError = null; state.confirmDel = null; renderRoot(); },
+    'fu-toggle': (el) => { toggleFuDone(el.dataset.id); },
+    'fu-show-done': () => { state.fuShowDone = !state.fuShowDone; renderRoot(); },
+    'enable-notifs': () => { enableNotifs(); },
+
+    // --- deals ---
+    'add-deal': () => { state.editingDeal = null; state.dealFormError = null; state.dealFormOpen = true; renderRoot(); },
+    'edit-deal': (el) => {
+      state.editingDeal = state.deals.find(d => d.id === el.dataset.id) || null;
+      state.dealFormError = null; state.dealFormOpen = true; renderRoot();
+    },
+    'close-deal-form': () => { state.dealFormOpen = false; state.editingDeal = null; state.dealFormError = null; state.confirmDel = null; renderRoot(); },
+    'move-deal': (el) => { moveDeal(el.dataset.id, parseInt(el.dataset.dir, 10)); },
+
+    // --- AI ---
+    'ai-match': (el) => { state.aiOpen = { kind: 'match', id: el.dataset.id }; renderRoot(); },
+    'ai-similar': (el) => { state.aiOpen = { kind: 'similar', id: el.dataset.id }; renderRoot(); },
+    'ai-growth': (el) => { state.aiOpen = { kind: 'growth', id: el.dataset.id }; renderRoot(); },
+    'close-ai': () => { state.aiOpen = null; renderRoot(); },
+
+    // --- calculator / quote ---
+    'quote-from-card': (el) => {
+      const p = propById(el.dataset.id);
+      if (p) { state.calc.propId = p.id; state.calc.price = String(p.price); }
+      state.screen = 'calculator';
+      state.quoteOpen = true;
+      renderRoot();
+    },
+    'open-quote': () => { state.quoteOpen = true; renderRoot(); },
+    'close-quote': () => { state.quoteOpen = false; renderRoot(); },
+    'download-quote': () => { downloadQuotePng(); },
+
+    // --- history exports ---
+    'export-csv': () => { exportHistoryCsv(); },
+    'export-pdf': () => { exportHistoryPdf(); },
+  };
+
+  const FORM_ACTIONS = ['auth-submit', 'save-property', 'save-client', 'save-fu', 'save-deal'];
+
+  function initEvents() {
+    const root = document.getElementById('app-root');
+
+    root.addEventListener('click', (e) => {
+      // Backdrop click closes the relevant modal (target is the overlay itself,
+      // not a child — children never carry the .overlay class).
+      if (e.target.classList && e.target.classList.contains('overlay')) {
+        const which = e.target.dataset.overlay;
+        if (which === 'form') actions['close-form']();
+        else if (which === 'client-form') actions['close-client-form']();
+        else if (which === 'fu-form') actions['close-fu-form']();
+        else if (which === 'deal-form') actions['close-deal-form']();
+        else if (which === 'quote') actions['close-quote']();
+        else if (which === 'ai') actions['close-ai']();
+        return;
+      }
+      const el = e.target.closest ? e.target.closest('[data-action]') : null;
+      if (!el) return;
+      const name = el.dataset.action;
+      if (FORM_ACTIONS.includes(name)) return; // handled via 'submit'
+      if (el.tagName === 'A') return;          // real links (tel:, wa.me, maps) pass through
+      if (actions[name]) { e.preventDefault(); actions[name](el, e); }
+    });
+
+    root.addEventListener('submit', (e) => {
+      const el = e.target.closest('[data-action]');
+      if (!el) return;
+      e.preventDefault();
+      const name = el.dataset.action;
+      if (name === 'auth-submit') handleAuthSubmit();
+      else if (name === 'save-property') saveProperty(el);
+      else if (name === 'save-client') saveClient(el);
+      else if (name === 'save-fu') saveFu(el);
+      else if (name === 'save-deal') saveDeal(el);
+    });
+
+    // Inputs that re-render only a subtree (preserve caret position).
+    root.addEventListener('input', (e) => {
+      const calcKey = e.target.dataset.calc;
+      if (calcKey) {
+        state.calc[calcKey] = e.target.value;
+        const box = document.getElementById('calc-results');
+        if (box) box.innerHTML = renderCalcResults();
+        return;
+      }
+      const searchKind = e.target.dataset.search;
+      if (searchKind === 'prop') {
+        state.propSearch = e.target.value;
+        const box = document.getElementById('prop-list');
+        if (box) box.innerHTML = renderPropList();
+        return;
+      }
+      if (searchKind === 'client') {
+        state.clientSearch = e.target.value;
+        const box = document.getElementById('client-list');
+        if (box) box.innerHTML = renderClientList();
+        return;
+      }
+    });
+
+    root.addEventListener('change', (e) => {
+      const el = e.target;
+      // quick stage change on an expanded client card
+      if (el.dataset.clientStage) { changeClientStage(el.dataset.clientStage, el.value); return; }
+      // deal form: picking a property autofills the deal value
+      if (el.hasAttribute && el.hasAttribute('data-deal-prop')) {
+        const opt = el.selectedOptions && el.selectedOptions[0];
+        const price = opt ? opt.dataset.price : '';
+        const valueInput = document.getElementById('deal-value');
+        if (price && valueInput) valueInput.value = price;
+        return;
+      }
+      const which = el.dataset.actionChange;
+      if (which === 'calc-prop') {
+        state.calc.propId = el.value;
+        const p = propById(el.value);
+        if (p) state.calc.price = String(p.price);
+        renderRoot();
+        return;
+      }
+      if (which === 'hist-filter') {
+        state[el.dataset.key] = el.value;
+        renderRoot();
+        return;
+      }
+    });
+
+    // Chart tooltip (hover layer) — one shared tip element, delegated globally.
+    const tip = document.getElementById('charttip');
+    document.addEventListener('mousemove', (e) => {
+      const el = e.target.closest ? e.target.closest('[data-tip]') : null;
+      if (el) {
+        tip.textContent = el.dataset.tip;
+        tip.classList.add('on');
+        const x = Math.min(e.clientX + 12, window.innerWidth - tip.offsetWidth - 8);
+        tip.style.left = Math.max(4, x) + 'px';
+        tip.style.top = Math.max(4, e.clientY - 36) + 'px';
+      } else {
+        tip.classList.remove('on');
+      }
+    });
+    // Touch: tapping a bar shows the tip briefly.
+    let tipTimer = null;
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest ? e.target.closest('.cbar[data-tip]') : null;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      tip.textContent = el.dataset.tip;
+      tip.classList.add('on');
+      tip.style.left = Math.max(4, Math.min(rect.left, window.innerWidth - tip.offsetWidth - 8)) + 'px';
+      tip.style.top = Math.max(4, rect.top - 34) + 'px';
+      clearTimeout(tipTimer);
+      tipTimer = setTimeout(() => tip.classList.remove('on'), 1800);
+    });
+  }
+
+  /* ===================================================================== */
+  /* 29.  SAVE / MUTATE HANDLERS                                            */
+  /* ===================================================================== */
+  async function saveProperty(formEl) {
+    const fd = new FormData(formEl);
+    const images = String(fd.get('images') || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    const row = {
+      code: (fd.get('code') || '').trim(),
+      icon: fd.get('icon') || '🏠',
+      status: fd.get('status') || 'available',
+      type: fd.get('type') || 'sale',
+      price: num(fd.get('price')),
+      beds: parseInt(fd.get('beds'), 10) || 0,
+      baths: parseInt(fd.get('baths'), 10) || 0,
+      area: (fd.get('area') || '').toString().trim() === '' ? null : num(fd.get('area')),
+      project: (fd.get('project') || '').trim() || null,
+      developer: (fd.get('developer') || '').trim() || null,
+      unit_type: fd.get('unit_type') || null,
+      delivery: fd.get('delivery') || null,
+      payment_plan: (fd.get('payment_plan') || '').trim() || null,
+      map_url: (fd.get('map_url') || '').trim() || null,
+      images,
+      address_en: (fd.get('address_en') || '').trim(),
+      address_ar: (fd.get('address_ar') || '').trim(),
+      finish_en: (fd.get('finish_en') || '').trim() || null,
+      finish_ar: (fd.get('finish_ar') || '').trim() || null,
+      unit_en: (fd.get('unit_en') || '').trim() || null,
+      unit_ar: (fd.get('unit_ar') || '').trim() || null,
+      agent_en: (fd.get('agent_en') || '').trim() || null,
+      agent_ar: (fd.get('agent_ar') || '').trim() || null,
+      registered: fd.get('registered') || null,
+    };
+    if (!row.code || !row.address_en || !row.address_ar) {
+      state.formError = '⚠ ' + t('code') + ' / ' + t('addressEn') + ' / ' + t('addressAr');
+      renderRoot(); return;
+    }
+    state.formBusy = true; state.formError = null; renderRoot();
+    try {
+      if (state.editing) {
+        const updated = await rest.update('properties', state.editing.id, row);
+        const rowData = Array.isArray(updated) ? updated[0] : updated;
+        const i = state.properties.findIndex(p => p.id === state.editing.id);
+        if (i >= 0 && rowData) state.properties[i] = rowData;
+      } else {
+        const created = await rest.create('properties', row);
+        const rowData = Array.isArray(created) ? created[0] : created;
+        if (rowData) state.properties.push(rowData);
+        state.properties.sort((a, b) => String(a.code).localeCompare(String(b.code)));
+      }
+      state.formOpen = false; state.editing = null;
+      renderRoot();
+      toast(t('saved'));
+    } catch (err) {
+      state.formError = err.message;
+      renderRoot();
+    } finally {
+      state.formBusy = false;
+    }
+  }
+
+  async function saveClient(formEl) {
+    const fd = new FormData(formEl);
+    const row = {
+      name: (fd.get('name') || '').trim(),
+      phone: (fd.get('phone') || '').trim() || null,
+      email: (fd.get('email') || '').trim() || null,
+      budget: (fd.get('budget') || '').toString().trim() === '' ? null : num(fd.get('budget')),
+      preferred_area: (fd.get('preferred_area') || '').trim() || null,
+      preferred_unit_type: fd.get('preferred_unit_type') || null,
+      notes: (fd.get('notes') || '').trim() || null,
+      stage: fd.get('stage') || 'new_lead',
+    };
+    if (!row.name) { state.clientFormError = '⚠ ' + t('clientName'); renderRoot(); return; }
+    state.clientFormBusy = true; state.clientFormError = null; renderRoot();
+    try {
+      if (state.editingClient) {
+        const updated = await rest.update('clients', state.editingClient.id, row);
+        const rowData = Array.isArray(updated) ? updated[0] : updated;
+        const i = state.clients.findIndex(c => c.id === state.editingClient.id);
+        if (i >= 0 && rowData) state.clients[i] = rowData;
+      } else {
+        const created = await rest.create('clients', row);
+        const rowData = Array.isArray(created) ? created[0] : created;
+        if (rowData) state.clients.unshift(rowData);
+      }
+      state.clientFormOpen = false; state.editingClient = null;
+      renderRoot();
+      toast(t('saved'));
+    } catch (err) {
+      state.clientFormError = err.message;
+      renderRoot();
+    } finally {
+      state.clientFormBusy = false;
+    }
+  }
+
+  async function changeClientStage(id, stage) {
+    const c = clientById(id);
+    if (!c) return;
+    const prev = c.stage;
+    c.stage = stage;
+    renderRoot();
+    try {
+      await rest.update('clients', id, { stage });
+      toast(t('saved'));
+    } catch (err) {
+      c.stage = prev;
+      renderRoot();
+      toast(err.message);
+    }
+  }
+
+  async function saveFu(formEl) {
+    const fd = new FormData(formEl);
+    const date = fd.get('due_date'), time = fd.get('due_time') || '09:00';
+    const due = new Date(date + 'T' + time);
+    const row = {
+      title: (fd.get('title') || '').trim(),
+      client_id: fd.get('client_id') || null,
+      kind: fd.get('kind') || 'call',
+      due_at: isNaN(due) ? null : due.toISOString(),
+      notes: (fd.get('notes') || '').trim() || null,
+    };
+    if (!row.title || !row.due_at) { state.fuFormError = '⚠ ' + t('fuTitle') + ' / ' + t('dueDate'); renderRoot(); return; }
+    state.fuFormBusy = true; state.fuFormError = null; renderRoot();
+    try {
+      if (state.editingFu) {
+        const updated = await rest.update('followups', state.editingFu.id, row);
+        const rowData = Array.isArray(updated) ? updated[0] : updated;
+        const i = state.followups.findIndex(f => f.id === state.editingFu.id);
+        if (i >= 0 && rowData) state.followups[i] = rowData;
+      } else {
+        const created = await rest.create('followups', row);
+        const rowData = Array.isArray(created) ? created[0] : created;
+        if (rowData) state.followups.push(rowData);
+      }
+      state.followups.sort((a, b) => String(a.due_at).localeCompare(String(b.due_at)));
+      state.fuFormOpen = false; state.editingFu = null; state.fuPrefillClient = '';
+      renderRoot();
+      toast(t('saved'));
+    } catch (err) {
+      state.fuFormError = err.message;
+      renderRoot();
+    } finally {
+      state.fuFormBusy = false;
+    }
+  }
+
+  async function toggleFuDone(id) {
+    const f = state.followups.find(x => x.id === id);
+    if (!f) return;
+    f.done = !f.done;
+    renderRoot();
+    try {
+      await rest.update('followups', id, { done: f.done });
+    } catch (err) {
+      f.done = !f.done;
+      renderRoot();
+      toast(err.message);
+    }
+  }
+
+  async function saveDeal(formEl) {
+    const fd = new FormData(formEl);
+    const stage = fd.get('stage') || 'lead';
+    const row = {
+      client_id: fd.get('client_id') || null,
+      property_id: fd.get('property_id') || null,
+      agent: (fd.get('agent') || '').trim() || null,
+      value: num(fd.get('value')),
+      commission_pct: num(fd.get('commission_pct')),
+      agent_share_pct: num(fd.get('agent_share_pct')),
+      company_share_pct: num(fd.get('company_share_pct')),
+      stage,
+      closed_at: stage === 'closed'
+        ? ((state.editingDeal && state.editingDeal.closed_at) || todayKey())
+        : null,
+    };
+    state.dealFormBusy = true; state.dealFormError = null; renderRoot();
+    try {
+      if (state.editingDeal) {
+        const updated = await rest.update('deals', state.editingDeal.id, row);
+        const rowData = Array.isArray(updated) ? updated[0] : updated;
+        const i = state.deals.findIndex(d => d.id === state.editingDeal.id);
+        if (i >= 0 && rowData) state.deals[i] = rowData;
+      } else {
+        const created = await rest.create('deals', row);
+        const rowData = Array.isArray(created) ? created[0] : created;
+        if (rowData) state.deals.unshift(rowData);
+      }
+      state.dealFormOpen = false; state.editingDeal = null;
+      renderRoot();
+      toast(t('saved'));
+    } catch (err) {
+      state.dealFormError = err.message;
+      renderRoot();
+    } finally {
+      state.dealFormBusy = false;
+    }
+  }
+
+  async function moveDeal(id, dir) {
+    const d = state.deals.find(x => x.id === id);
+    if (!d) return;
+    const idx = DEAL_STAGES.indexOf(d.stage);
+    const next = DEAL_STAGES[idx + dir];
+    if (!next) return;
+    const prev = { stage: d.stage, closed_at: d.closed_at };
+    d.stage = next;
+    if (next === 'closed' && !d.closed_at) d.closed_at = todayKey();
+    if (next !== 'closed') d.closed_at = null;
+    renderRoot();
+    try {
+      await rest.update('deals', id, { stage: d.stage, closed_at: d.closed_at });
+    } catch (err) {
+      d.stage = prev.stage; d.closed_at = prev.closed_at;
+      renderRoot();
+      toast(err.message);
+    }
+  }
+
+  async function doConfirmedDelete() {
+    const cd = state.confirmDel;
+    if (!cd) return;
+    state.confirmDel = null;
+    try {
+      if (cd.kind === 'property') {
+        await rest.remove('properties', cd.id);
+        state.properties = state.properties.filter(p => p.id !== cd.id);
+        state.deals.forEach(d => { if (d.property_id === cd.id) d.property_id = null; });
+        if (state.expandedId === cd.id) state.expandedId = null;
+      } else if (cd.kind === 'client') {
+        await rest.remove('clients', cd.id);
+        state.clients = state.clients.filter(c => c.id !== cd.id);
+        state.followups = state.followups.filter(f => f.client_id !== cd.id);
+        state.deals.forEach(d => { if (d.client_id === cd.id) d.client_id = null; });
+        if (state.expandedClientId === cd.id) state.expandedClientId = null;
+      } else if (cd.kind === 'deal') {
+        await rest.remove('deals', cd.id);
+        state.deals = state.deals.filter(d => d.id !== cd.id);
+        state.dealFormOpen = false; state.editingDeal = null;
+      } else if (cd.kind === 'followup') {
+        await rest.remove('followups', cd.id);
+        state.followups = state.followups.filter(f => f.id !== cd.id);
+        state.fuFormOpen = false; state.editingFu = null;
+      }
+      renderRoot();
+      toast(t('deleted'));
+    } catch (err) {
+      renderRoot();
+      toast(err.message);
+    }
+  }
+
+  /* ===================================================================== */
+  /* 30.  INIT                                                              */
+  /* ===================================================================== */
+  async function init() {
+    initEvents();
+    await restoreSession();
+    renderRoot();
+    if (state.session) loadAll();
+    setInterval(checkDueFollowups, 60000);
+  }
+  init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+/* Ring Roads spacing — 4px base, matching the app's 4/8/12/16/24 rhythm. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;  /* default screen padding & card padding */
+  --space-5: 20px;
+  --space-6: 24px;  /* header vertical padding */
+  --space-8: 32px;
+  --space-10: 40px;
+}

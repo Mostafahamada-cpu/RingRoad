@@ -1,0 +1,13 @@
+/* Ring Roads webfonts.
+   SUBSTITUTION: the source React Native app used the platform system fonts
+   (San Francisco / Roboto). For a bilingual EN + AR system we standardize on
+   Cairo — a humanist sans with matched Latin + Arabic glyphs, so English and
+   Arabic sit at the same weight and rhythm. Loaded from Google Fonts.
+   If Ring Roads has a licensed brand typeface, send the files and we'll swap it. */
+@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --font-sans: "Cairo", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  /* Arabic and Latin both render in Cairo; alias kept for intent clarity */
+  --font-arabic: "Cairo", "Segoe UI", Tahoma, sans-serif;
+}

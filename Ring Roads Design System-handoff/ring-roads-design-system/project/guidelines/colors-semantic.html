@@ -1,0 +1,24 @@
+<!-- @dsCard group="Colors" viewport="700x160" name="Status / Semantic" subtitle="Property state & feedback colors" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin:0; padding:20px; background:var(--surface-card); font-family:var(--font-sans); display:flex; gap:14px; }
+  .tile { flex:1; border-radius:var(--radius-md); padding:14px; }
+  .pill { display:inline-block; font-size:12px; font-weight:600; padding:4px 10px; border-radius:var(--radius-xs); margin-bottom:10px; }
+  .name { font-size:13px; font-weight:700; }
+  .hex { font-size:11px; color:var(--text-muted); }
+</style></head>
+<body>
+  <div class="tile" style="background:var(--success-bg)">
+    <span class="pill" style="background:#fff;color:var(--success)">متاح · Available</span>
+    <div class="name" style="color:var(--success)">success</div><div class="hex">#16a34a</div>
+  </div>
+  <div class="tile" style="background:var(--error-bg)">
+    <span class="pill" style="background:#fff;color:var(--error)">مباع · Sold</span>
+    <div class="name" style="color:var(--error)">error</div><div class="hex">#dc2626</div>
+  </div>
+  <div class="tile" style="background:var(--warning-bg)">
+    <span class="pill" style="background:#fff;color:var(--warning)">مؤجر · Rented</span>
+    <div class="name" style="color:var(--warning)">warning</div><div class="hex">#d97706</div>
+  </div>
+</body></html>

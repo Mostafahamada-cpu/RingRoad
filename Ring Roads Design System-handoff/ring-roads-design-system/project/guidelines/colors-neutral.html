@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Neutrals" subtitle="Backgrounds, borders & text grays" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin:0; padding:20px; background:var(--surface-card); font-family:var(--font-sans); }
+  .ramp { display:flex; gap:0; border-radius:var(--radius-md); overflow:hidden; border:1px solid var(--border-default); }
+  .sw { flex:1; height:88px; display:flex; flex-direction:column; justify-content:flex-end; padding:8px; box-sizing:border-box; }
+  .sw span { font-size:11px; font-weight:600; }
+  .lite { color:var(--gray-900); } .dark { color:#fff; }
+</style></head>
+<body>
+<div class="ramp">
+  <div class="sw lite" style="background:var(--white)"><span>white</span></div>
+  <div class="sw lite" style="background:var(--gray-50)"><span>50 ·app bg</span></div>
+  <div class="sw lite" style="background:var(--gray-100)"><span>100</span></div>
+  <div class="sw lite" style="background:var(--gray-200)"><span>200 ·border</span></div>
+  <div class="sw lite" style="background:var(--gray-300)"><span>300</span></div>
+  <div class="sw dark" style="background:var(--gray-500)"><span>500 ·muted</span></div>
+  <div class="sw dark" style="background:var(--gray-700)"><span>700</span></div>
+  <div class="sw dark" style="background:var(--gray-900)"><span>900 ·body</span></div>
+</div>
+</body></html>

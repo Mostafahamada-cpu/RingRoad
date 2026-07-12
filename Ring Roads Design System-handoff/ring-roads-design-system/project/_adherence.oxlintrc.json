@@ -1,0 +1,315 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/actions/**",
+              "components/finance/**",
+              "components/forms/**",
+              "components/layout/**",
+              "components/navigation/**",
+              "components/property/**",
+              "ui_kits/mobile-app/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Cairo))/i]",
+        "message": "Font not provided by the design system. Available: Cairo."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute > JSXIdentifier[name!=/^(?:children|variant|size|icon|fullWidth|disabled|onClick|style|key|ref|className|style|children)$/]",
+        "message": "<Button> doesn't accept that prop. Declared props: children, variant, size, icon, fullWidth, disabled, onClick, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:primary|secondary|ghost)$/]",
+        "message": "<Button> variant must be one of 'primary' | 'secondary' | 'ghost'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Button'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:sm|md|lg)$/]",
+        "message": "<Button> size must be one of 'sm' | 'md' | 'lg'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CommissionRow'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|percentage|amount|variant|dir|key|ref|className|style|children)$/]",
+        "message": "<CommissionRow> doesn't accept that prop. Declared props: label, percentage, amount, variant, dir."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CommissionRow'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:default|subtotal|total)$/]",
+        "message": "<CommissionRow> variant must be one of 'default' | 'subtotal' | 'total'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='CommissionRow'] > JSXAttribute[name.name='dir'] > Literal[value!=/^(?:ltr|rtl)$/]",
+        "message": "<CommissionRow> dir must be one of 'ltr' | 'rtl'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute > JSXIdentifier[name!=/^(?:label|value|onChange|placeholder|suffix|type|dir|disabled|style|key|ref|className|style|children)$/]",
+        "message": "<Input> doesn't accept that prop. Declared props: label, value, onChange, placeholder, suffix, type, dir, disabled, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Input'] > JSXAttribute[name.name='dir'] > Literal[value!=/^(?:ltr|rtl)$/]",
+        "message": "<Input> dir must be one of 'ltr' | 'rtl'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Panel'] > JSXAttribute > JSXIdentifier[name!=/^(?:title|accent|children|dir|style|key|ref|className|style|children)$/]",
+        "message": "<Panel> doesn't accept that prop. Declared props: title, accent, children, dir, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Panel'] > JSXAttribute[name.name='accent'] > Literal[value!=/^(?:accent|brand|success|warning)$/]",
+        "message": "<Panel> accent must be one of 'accent' | 'brand' | 'success' | 'warning'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='Panel'] > JSXAttribute[name.name='dir'] > Literal[value!=/^(?:ltr|rtl)$/]",
+        "message": "<Panel> dir must be one of 'ltr' | 'rtl'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PropertyRecord'] > JSXAttribute > JSXIdentifier[name!=/^(?:code|address|price|icon|status|statusLabel|beds|baths|typeLabel|finish|unit|agent|registered|key|ref|className|style|children)$/]",
+        "message": "<PropertyRecord> doesn't accept that prop. Declared props: code, address, price, icon, status, statusLabel, beds, baths, typeLabel, finish, unit, agent, registered."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PropertyRecord'] > JSXAttribute[name.name='status'] > Literal[value!=/^(?:available|sold|rented)$/]",
+        "message": "<PropertyRecord> status must be one of 'available' | 'sold' | 'rented'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatCard'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|label|accent|dir|style|key|ref|className|style|children)$/]",
+        "message": "<StatCard> doesn't accept that prop. Declared props: value, label, accent, dir, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatCard'] > JSXAttribute[name.name='dir'] > Literal[value!=/^(?:ltr|rtl)$/]",
+        "message": "<StatCard> dir must be one of 'ltr' | 'rtl'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatusBadge'] > JSXAttribute > JSXIdentifier[name!=/^(?:status|children|style|key|ref|className|style|children)$/]",
+        "message": "<StatusBadge> doesn't accept that prop. Declared props: status, children, style."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='StatusBadge'] > JSXAttribute[name.name='status'] > Literal[value!=/^(?:available|sold|rented)$/]",
+        "message": "<StatusBadge> status must be one of 'available' | 'sold' | 'rented'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='TabItem'] > JSXAttribute > JSXIdentifier[name!=/^(?:id|label|icon|key|ref|className|style|children)$/]",
+        "message": "<TabItem> doesn't accept that prop. Declared props: id, label, icon."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "Button": {
+        "replaces": []
+      },
+      "CommissionRow": {
+        "replaces": []
+      },
+      "Input": {
+        "replaces": []
+      },
+      "Panel": {
+        "replaces": []
+      },
+      "PropertyRecord": {
+        "replaces": []
+      },
+      "StatCard": {
+        "replaces": []
+      },
+      "StatusBadge": {
+        "replaces": []
+      },
+      "TabItem": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--blue-100",
+      "--blue-200",
+      "--blue-300",
+      "--blue-400",
+      "--blue-50",
+      "--blue-500",
+      "--blue-600",
+      "--blue-700",
+      "--blue-800",
+      "--blue-900",
+      "--border-accent",
+      "--border-default",
+      "--border-strong",
+      "--brand",
+      "--brand-accent",
+      "--brand-strong",
+      "--error",
+      "--error-bg",
+      "--focus-ring",
+      "--font-arabic",
+      "--font-sans",
+      "--gray-100",
+      "--gray-200",
+      "--gray-300",
+      "--gray-50",
+      "--gray-500",
+      "--gray-700",
+      "--gray-900",
+      "--leading-normal",
+      "--leading-snug",
+      "--leading-tight",
+      "--radius-lg",
+      "--radius-md",
+      "--radius-pill",
+      "--radius-sm",
+      "--radius-xs",
+      "--shadow-card",
+      "--shadow-lg",
+      "--shadow-sm",
+      "--shadow-stat",
+      "--space-1",
+      "--space-10",
+      "--space-2",
+      "--space-3",
+      "--space-4",
+      "--space-5",
+      "--space-6",
+      "--space-8",
+      "--success",
+      "--success-bg",
+      "--surface-app",
+      "--surface-card",
+      "--surface-invert",
+      "--surface-tint",
+      "--text-2xs",
+      "--text-accent",
+      "--text-body",
+      "--text-display",
+      "--text-h1",
+      "--text-h2",
+      "--text-h3",
+      "--text-heading",
+      "--text-muted",
+      "--text-on-brand",
+      "--text-sm",
+      "--text-xs",
+      "--tracking-label",
+      "--warning",
+      "--warning-bg",
+      "--weight-bold",
+      "--weight-extra",
+      "--weight-medium",
+      "--weight-regular",
+      "--weight-semibold",
+      "--white"
+    ],
+    "tokenKinds": {
+      "--font-sans": "font",
+      "--font-arabic": "font",
+      "--blue-900": "color",
+      "--blue-800": "color",
+      "--blue-700": "color",
+      "--blue-600": "color",
+      "--blue-500": "color",
+      "--blue-400": "color",
+      "--blue-300": "color",
+      "--blue-200": "color",
+      "--blue-100": "color",
+      "--blue-50": "color",
+      "--white": "color",
+      "--gray-50": "color",
+      "--gray-100": "color",
+      "--gray-200": "color",
+      "--gray-300": "color",
+      "--gray-500": "color",
+      "--gray-700": "color",
+      "--gray-900": "color",
+      "--success": "color",
+      "--success-bg": "color",
+      "--error": "color",
+      "--error-bg": "color",
+      "--warning": "color",
+      "--warning-bg": "color",
+      "--brand": "color",
+      "--brand-strong": "color",
+      "--brand-accent": "color",
+      "--surface-app": "color",
+      "--surface-card": "color",
+      "--surface-tint": "color",
+      "--surface-invert": "color",
+      "--text-heading": "font",
+      "--text-body": "font",
+      "--text-muted": "font",
+      "--text-on-brand": "font",
+      "--text-accent": "font",
+      "--border-default": "color",
+      "--border-strong": "color",
+      "--border-accent": "color",
+      "--focus-ring": "color",
+      "--text-display": "font",
+      "--text-h1": "font",
+      "--text-h2": "font",
+      "--text-h3": "font",
+      "--text-sm": "font",
+      "--text-xs": "font",
+      "--text-2xs": "font",
+      "--weight-regular": "font",
+      "--weight-medium": "font",
+      "--weight-semibold": "font",
+      "--weight-bold": "font",
+      "--weight-extra": "font",
+      "--leading-tight": "font",
+      "--leading-snug": "font",
+      "--leading-normal": "font",
+      "--tracking-label": "font",
+      "--space-1": "spacing",
+      "--space-2": "spacing",
+      "--space-3": "spacing",
+      "--space-4": "spacing",
+      "--space-5": "spacing",
+      "--space-6": "spacing",
+      "--space-8": "spacing",
+      "--space-10": "spacing",
+      "--radius-xs": "radius",
+      "--radius-sm": "radius",
+      "--radius-md": "radius",
+      "--radius-lg": "radius",
+      "--radius-pill": "radius",
+      "--shadow-sm": "shadow",
+      "--shadow-card": "shadow",
+      "--shadow-stat": "shadow",
+      "--shadow-lg": "shadow"
+    },
+    "fontFamilies": [
+      "Cairo"
+    ]
+  }
+}

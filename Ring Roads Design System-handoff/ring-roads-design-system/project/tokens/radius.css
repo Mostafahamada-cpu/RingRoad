@@ -1,0 +1,9 @@
+/* Ring Roads corner radii — from the app: 6 badges, 8 inputs/buttons,
+   12 cards/panels, 16 header sheet. */
+:root {
+  --radius-xs: 6px;   /* status badges, small chips */
+  --radius-sm: 8px;   /* inputs, buttons, inner boxes */
+  --radius-md: 12px;  /* cards, panels, stat boxes */
+  --radius-lg: 16px;  /* header sheet corners */
+  --radius-pill: 999px;
+}

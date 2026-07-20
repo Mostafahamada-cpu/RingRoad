@@ -16,16 +16,13 @@ export function on(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 export function emit() { listeners.forEach(fn => fn()); }
 
 export async function loadCore() {
-  const [profiles, teams, categories] = await Promise.all([
-    db.list('profiles', 'select=*&order=name.asc'),
-    db.list('teams', 'select=*&order=name.asc'),
-    db.list('categories', 'select=*&order=sort.asc').catch(() => []),
-  ]);
-  store.profiles = profiles || [];
-  store.teams = teams || [];
-  store.categories = categories || [];
-  store.profile = store.profiles.find(p => p.id === userId()) || null;
+export async function loadCore() {
+  store.profiles = [];
+  store.teams = [];
+  store.categories = [];
+  store.profile = null;
   store.loaded = true;
+}
 }
 
 export const me = () => store.profile;

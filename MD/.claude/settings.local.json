@@ -20,7 +20,8 @@
       "PowerShell(node --version)",
       "Bash(perl -i -pe \"s/new Blob\\\\\\(\\\\['\\\\x{FEFF}' \\\\+/new Blob\\(['\\\\\\\\\\\\\\\\uFEFF' +/ if /new Blob/\" index.html)",
       "Bash(perl -CSD -i -pe 's/\\\\x{FEFF}/\\\\\\\\uFEFF/ if $. == 2353' index.html)",
-      "mcp__claude-in-chrome__tabs_context_mcp"
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "Bash(awk -v envjs=/c/Users/hamad/AppData/Local/Temp/claude/C--Important-files-RingRoads-MD/da47af05-7ee9-4336-b43c-c17c1c4261a3/scratchpad/envelope.js ' *)"
     ]
   }
 }

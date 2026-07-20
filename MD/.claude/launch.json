@@ -8,6 +8,12 @@
       "port": 8123
     },
     {
+      "name": "memora-weddings",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ".claude/serve-weddings.ps1"],
+      "port": 8125
+    },
+    {
       "name": "memora-store",
       "runtimeExecutable": "powershell",
       "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ".claude/serve-memora.ps1"],

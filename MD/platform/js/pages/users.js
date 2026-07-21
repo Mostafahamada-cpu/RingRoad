@@ -12,24 +12,45 @@ import { render as rerender } from '../lib/router.js';
 import { toast } from '../lib/toast.js';
 import { ROLES } from '../config.js';
 
-function roleOpts(value) {
-  return ROLES.map(r => ({ v: r, l: t(r) }));
-}
+const ROLE_DESC = { admin: 'roleAdminDesc', management: 'roleMgmtDesc', leader: 'roleLeaderDesc', agent: 'roleAgentDesc' };
+const ROLE_ICON = { admin: '👑', management: '📊', leader: '🛡️', agent: '💼' };
 const teamOpts = () => store.teams.filter(tm => !tm.archived).map(tm => ({ v: tm.id, l: tm.name }));
 
 function openUserForm(p, onDone) {
   const isNew = !p;
+  const curRole = p?.role || 'agent';
+  const roleCards = ROLES.map(r => `
+    <label class="rolecard ${curRole === r ? 'on' : ''}" data-rolecard="${r}">
+      <input type="radio" name="role" value="${r}" ${curRole === r ? 'checked' : ''} hidden>
+      <span class="rolecard__ic">${ROLE_ICON[r]}</span>
+      <span class="rolecard__tx"><b>${esc(t(r))}</b><span class="xs muted">${esc(t(ROLE_DESC[r]))}</span></span>
+    </label>`).join('');
   const { el, close } = openModal({
-    title: isNew ? t('addUser') : t('editUser'),
+    title: isNew ? t('addUser') : t('editUser'), size: 'lg',
     body: `
+      <style>
+        .rolegrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .rolecard { display:flex; gap:10px; align-items:flex-start; border:1.5px solid var(--line-strong); border-radius:var(--r-md); padding:12px; cursor:pointer; transition:all .15s ease; }
+        .rolecard:hover { border-color:var(--orange-400); }
+        .rolecard.on { border-color:var(--orange-500); background:var(--orange-50); box-shadow:0 0 0 3px var(--orange-50); }
+        .rolecard__ic { font-size:20px; } .rolecard__tx { display:flex; flex-direction:column; gap:2px; line-height:1.3; }
+        @media (max-width:560px){ .rolegrid { grid-template-columns:1fr; } }
+      </style>
       <form class="form-grid" novalidate>
-        ${field({ label: t('name'), name: 'name', value: p?.name, required: true, span2: true })}
-        ${field({ label: t('email'), name: 'email', type: 'email', value: p?.email, required: isNew, dir: 'ltr', span2: !isNew ? false : false, ...(isNew ? {} : {}) })}
+        <div class="field span-2"><span class="field__label">${esc(t('selectRole'))} <span class="req">*</span></span>
+          <div class="rolegrid">${roleCards}</div></div>
+        ${field({ label: t('name'), name: 'name', value: p?.name, required: true })}
+        ${field({ label: t('nationality'), name: 'nationality', value: p?.nationality })}
+        ${field({ label: t('email'), name: 'email', type: 'email', value: p?.email, required: isNew, dir: 'ltr' })}
         ${field({ label: t('phone'), name: 'phone', type: 'tel', value: p?.phone, dir: 'ltr' })}
-        ${isNew ? field({ label: t('tempPassword'), name: 'password', required: true, dir: 'ltr', hint: '≥ 8' }) : ''}
-        ${selectField({ label: t('role'), name: 'role', options: roleOpts(), value: p?.role || 'agent', required: true })}
-        ${selectField({ label: t('team'), name: 'team_id', options: teamOpts(), value: p?.team_id || '', emptyLabel: t('unassigned') })}
-        ${field({ label: t('rating') + ' (0-5)', name: 'performance_rating', type: 'number', value: p?.performance_rating ?? 0, min: 0, max: 5, step: '0.5', dir: 'ltr' })}
+        ${isNew ? field({ label: t('tempPassword'), name: 'password', required: true, dir: 'ltr', hint: '≥ 8' }) : field({ label: t('rating') + ' (0-5)', name: 'performance_rating', type: 'number', value: p?.performance_rating ?? 0, min: 0, max: 5, step: '0.5', dir: 'ltr' })}
+        <div class="field ${isNew ? '' : 'span-2'}" data-teamwrap>
+          <span class="field__label">${esc(t('assignTeam'))}</span>
+          <select class="select" name="team_id"><option value="">${esc(t('unassigned'))}</option>
+            ${teamOpts().map(o => `<option value="${esc(o.v)}" ${p?.team_id === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join('')}</select>
+          <div class="field__hint" data-reports></div>
+        </div>
+        ${isNew ? field({ label: t('rating') + ' (0-5)', name: 'performance_rating', type: 'number', value: 0, min: 0, max: 5, step: '0.5', dir: 'ltr' }) : ''}
         <div class="modal__actions span-2">
           <button type="button" class="btn btn--outline" data-x>${esc(t('cancel'))}</button>
           <button type="submit" class="btn btn--primary">${esc(t('save'))}</button>
@@ -39,27 +60,52 @@ function openUserForm(p, onDone) {
   const form = el.querySelector('form');
   if (!isNew) form.email.disabled = true;
   el.querySelector('[data-x]').onclick = close;
+
+  const teamWrap = el.querySelector('[data-teamwrap]');
+  const teamSel = form.querySelector('[name="team_id"]');
+  const reports = el.querySelector('[data-reports]');
+  const syncRole = () => {
+    const role = form.querySelector('[name="role"]:checked').value;
+    el.querySelectorAll('[data-rolecard]').forEach(c => c.classList.toggle('on', c.dataset.rolecard === role));
+    // team needed for leader & agent; hidden for admin/management
+    teamWrap.style.display = (role === 'leader' || role === 'agent') ? '' : 'none';
+    syncReports(role);
+  };
+  const syncReports = (role) => {
+    if (role !== 'agent') { reports.textContent = ''; return; }
+    const tm = teamById(teamSel.value);
+    const leader = tm ? store.profiles.find(x => x.id === tm.leader_id) : null;
+    reports.textContent = leader ? `${t('reportsTo')}: ${leader.name || leader.email}` : '';
+  };
+  el.querySelectorAll('[data-rolecard]').forEach(c => c.onclick = () => { c.querySelector('input').checked = true; syncRole(); });
+  teamSel.onchange = () => syncReports(form.querySelector('[name="role"]:checked').value);
+  syncRole();
+
   form.onsubmit = async (e) => {
     e.preventDefault();
-    const spec = { name: [rules.required], role: [rules.required], performance_rating: [rules.numeric, rules.min(0), rules.max(5)] };
+    const spec = { name: [rules.required], performance_rating: [rules.numeric, rules.min(0), rules.max(5)] };
     if (isNew) { spec.email = [rules.required, rules.email]; spec.password = [rules.required, rules.minLen(8)]; }
     if (!validateForm(form, spec)) return;
     const d = readForm(form);
+    const role = d.role;
     const patch = {
-      name: d.name.trim(), phone: d.phone.trim() || null, role: d.role,
-      team_id: d.team_id || null, performance_rating: +d.performance_rating || 0,
+      name: d.name.trim(), phone: d.phone.trim() || null, nationality: d.nationality.trim() || null,
+      role, team_id: (role === 'leader' || role === 'agent') ? (d.team_id || null) : null,
+      performance_rating: +d.performance_rating || 0,
     };
     try {
       if (isNew) {
         const res = await auth.signUpDetached(d.email.trim(), d.password);
         const newId = res.user?.id || res.id;
         if (!newId) throw new Error('signup failed');
-        // trigger creates the profile row; patch it with details
         await db.update('profiles', newId, { ...patch, email: d.email.trim() })
           .catch(() => db.create('profiles', { id: newId, email: d.email.trim(), ...patch }));
+        // if this new user is a leader, set them as the team's leader
+        if (role === 'leader' && patch.team_id) await db.update('teams', patch.team_id, { leader_id: newId }).catch(() => {});
         toast(t('userCreated'));
       } else {
         await db.update('profiles', p.id, patch);
+        if (role === 'leader' && patch.team_id) await db.update('teams', patch.team_id, { leader_id: p.id }).catch(() => {});
         toast(t('saved'));
       }
       close(); await loadCore(); onDone();

@@ -9,6 +9,9 @@ import { toast } from './lib/toast.js';
 
 import { pageDashboard } from './pages/dashboard.js';
 import { pageListings } from './pages/listings.js';
+import { pageClients } from './pages/clients.js';
+import { pageDeals } from './pages/deals.js';
+import { pageFollowups } from './pages/followups.js';
 import { pageListingForm } from './pages/listing-form.js';
 import { pageListingDetail } from './pages/listing-detail.js';
 import { pageSold } from './pages/sold.js';
@@ -55,6 +58,9 @@ async function enterApp() {
     { path: 'properties/new', page: (p) => pageListingForm({ id: 'new' }), nav: 'properties', title: 'addProperty' },
     { path: 'properties/:id', page: pageListingDetail, nav: 'properties', title: 'navProperties' },
     { path: 'properties/:id/edit', page: pageListingForm, nav: 'properties', title: 'editProperty' },
+    { path: 'clients', page: pageClients, nav: 'clients', title: 'navClients' },
+    { path: 'deals', page: pageDeals, nav: 'deals', title: 'navDeals' },
+    { path: 'followups', page: pageFollowups, nav: 'followups', title: 'navFollowups' },
     { path: 'sold', page: pageSold, nav: 'sold', title: 'navSold' },
     { path: 'archive', page: pageArchive, nav: 'archive', title: 'navArchive', guard: () => isMgmt() || isLeader() },
     { path: 'teams', page: pageTeams, nav: 'teams', title: 'navTeams', guard: isMgmt },

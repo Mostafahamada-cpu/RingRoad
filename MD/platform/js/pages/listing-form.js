@@ -13,7 +13,7 @@ import { GOVERNORATES, AMENITIES, STATUSES } from '../config.js';
 
 export async function pageListingForm(params) {
   const isNew = params.id === 'new';
-  const l = isNew ? {} : await db.one('listings', params.id);
+  const l = isNew ? {} : await db.one('properties', params.id);
   if (!isNew && !l) return `<div class="empty">${esc(t('propNotFound'))}</div>`;
   if (!isNew && !canEditListing(l)) { navigate('properties'); return document.createElement('div'); }
 
@@ -103,13 +103,15 @@ export async function pageListingForm(params) {
     try {
       const d = readForm(form);
       const id = isNew ? uid() : l.id;
-      const images = await up.commit('listings/' + id);
+      const images = await up.commit('properties/' + id);
       const numOrNull = (v) => (v === '' || v == null) ? null : +v;
+      const addr = d.address.trim();
       const row = {
-        title: d.title.trim(), ptype: d.ptype, price: +d.price, area: +d.area,
+        title: d.title.trim(), ptype: d.ptype, unit_type: d.ptype, price: +d.price, area: +d.area,
         bedrooms: numOrNull(d.bedrooms) ?? 0, bathrooms: numOrNull(d.bathrooms) ?? 0,
+        beds: numOrNull(d.bedrooms) ?? 0, baths: numOrNull(d.bathrooms) ?? 0,
         floor: numOrNull(d.floor), year_built: numOrNull(d.year_built), parking: numOrNull(d.parking) ?? 0,
-        address: d.address.trim(), city: d.city.trim(), governorate: d.governorate,
+        address: addr, city: d.city.trim(), governorate: d.governorate,
         description: d.description.trim(), status: d.status || 'available',
         agent_id: d.agent_id, team_id: d.team_id || (store.profiles.find(p => p.id === d.agent_id)?.team_id ?? null),
         furnished: !!d.furnished, featured: !!d.featured,
@@ -118,8 +120,14 @@ export async function pageListingForm(params) {
         // Agents' submissions need approval; management/leaders publish instantly.
         approval: (isMgmt() || isLeader()) ? 'approved' : (isNew ? 'pending' : (l.approval === 'rejected' ? 'pending' : l.approval)),
       };
-      if (isNew) await db.create('listings', { id, ...row });
-      else await db.update('listings', l.id, row);
+      // Compat with the original app's NOT NULL columns on `properties`.
+      if (isNew) {
+        row.code = 'RR-' + Date.now().toString().slice(-6);
+        row.address_en = addr; row.address_ar = addr;
+        row.type = 'sale';
+      }
+      if (isNew) await db.create('properties', { id, ...row });
+      else await db.update('properties', l.id, row);
       toast(t('propSaved'));
       navigate('properties/' + id);
     } catch (err) {

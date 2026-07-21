@@ -10,7 +10,7 @@ import { navigate, render as rerender } from '../lib/router.js';
 import { toast } from '../lib/toast.js';
 
 export async function pageListingDetail(params) {
-  const l = await db.one('listings', params.id);
+  const l = await db.one('properties', params.id);
   if (!l) return `<div class="empty"><div class="empty__icon">🔍</div>${esc(t('propNotFound'))}</div>`;
   const agent = profileById(l.agent_id);
   const team = teamById(l.team_id);
@@ -126,10 +126,10 @@ export async function pageListingDetail(params) {
   el.querySelector('#a-rest')?.addEventListener('click', async () => { if (await restoreListing(l)) rerender(); });
   el.querySelector('#a-del')?.addEventListener('click', async () => { if (await deleteListing(l)) navigate('properties'); });
   el.querySelector('#a-approve')?.addEventListener('click', async () => {
-    await db.update('listings', l.id, { approval: 'approved' }); toast(t('saved')); rerender();
+    await db.update('properties', l.id, { approval: 'approved' }); toast(t('saved')); rerender();
   });
   el.querySelector('#a-reject')?.addEventListener('click', async () => {
-    await db.update('listings', l.id, { approval: 'rejected' }); toast(t('saved'), 'warning'); rerender();
+    await db.update('properties', l.id, { approval: 'rejected' }); toast(t('saved'), 'warning'); rerender();
   });
 
   // related: same city or type, excluding self

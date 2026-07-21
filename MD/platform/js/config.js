@@ -22,3 +22,12 @@ export const TASK_PRIORITIES = ['low', 'normal', 'high'];
 export const EVENT_KINDS = ['meeting', 'visit', 'followup', 'other'];
 
 export const PAGE_SIZE = 10;
+
+// CRM pipeline vocab (matches the DB check constraints)
+export const CLIENT_STAGES = ['new_lead', 'contacted', 'visit_scheduled', 'negotiating', 'reservation', 'contract_signed'];
+export const CLIENT_STAGE_COLORS = { new_lead: '#C9679C', contacted: '#F97316', visit_scheduled: '#EA580C', negotiating: '#B45309', reservation: '#93195B', contract_signed: '#6A003C' };
+export const DEAL_STAGES = ['lead', 'contacted', 'visit', 'negotiation', 'reservation', 'won', 'lost'];
+export const DEAL_STAGE_COLORS = { lead: '#C9679C', contacted: '#F97316', visit: '#EA580C', negotiation: '#B45309', reservation: '#93195B', won: '#16803a', lost: '#9A1B2F' };
+export const WON_STAGES = ['won', 'closed'];
+export const FU_KINDS = ['call', 'meeting', 'visit', 'other'];
+export const FU_KIND_ICONS = { call: '📞', meeting: '🤝', visit: '📍', other: '📌' };

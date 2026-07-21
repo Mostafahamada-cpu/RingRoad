@@ -60,11 +60,11 @@ export async function pageListings() {
         searchable: null,
         bulk: canManage() ? [
           { label: '🗄️ ' + t('bulkArchive'), onAction: async (sel) => {
-            for (const l of sel) await db.update('listings', l.id, { status: 'archived' });
+            for (const l of sel) await db.update('properties', l.id, { status: 'archived' });
             toast(t('saved')); rerender();
           }},
           { label: '★ ' + t('bulkFeature'), onAction: async (sel) => {
-            for (const l of sel) await db.update('listings', l.id, { featured: true });
+            for (const l of sel) await db.update('properties', l.id, { featured: true });
             toast(t('saved')); rerender();
           }},
         ] : [],

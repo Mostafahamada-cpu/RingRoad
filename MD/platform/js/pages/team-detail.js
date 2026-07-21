@@ -233,17 +233,17 @@ export async function pageTeamDetail(params) {
         e.preventDefault();
         const lid = m.querySelector('[name="lid"]').value;
         if (!lid) return;
-        await db.update('listings', lid, { agent_id: b.dataset.assign, team_id: team.id });
+        await db.update('properties', lid, { agent_id: b.dataset.assign, team_id: team.id });
         close(); toast(t('saved')); rerender();
       };
     });
     body.querySelectorAll('[data-open]').forEach(d => d.onclick = () => navigate('properties/' + d.dataset.open));
     body.querySelectorAll('[data-approve]').forEach(b => b.onclick = async () => {
-      await db.update('listings', b.dataset.approve, { approval: 'approved' });
+      await db.update('properties', b.dataset.approve, { approval: 'approved' });
       toast(t('saved')); rerender();
     });
     body.querySelectorAll('[data-reject]').forEach(b => b.onclick = async () => {
-      await db.update('listings', b.dataset.reject, { approval: 'rejected' });
+      await db.update('properties', b.dataset.reject, { approval: 'rejected' });
       toast(t('saved'), 'warning'); rerender();
     });
     body.querySelector('[data-kpi]')?.addEventListener('click', () => {

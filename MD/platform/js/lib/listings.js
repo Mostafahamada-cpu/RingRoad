@@ -8,7 +8,7 @@ import { openModal, confirmDlg } from '../components/modal.js';
 import { field } from '../components/form.js';
 import { PTYPES } from '../config.js';
 
-export const loadListings = () => db.list('listings', 'select=*&order=created_at.desc');
+export const loadListings = () => db.list('properties', 'select=*&order=created_at.desc');
 
 // Visibility: everyone sees approved; own + team pending stay visible to their owners/leaders/mgmt.
 export function visibleListings(all) {
@@ -39,21 +39,21 @@ export function typeLabel(v) {
 export async function archiveListing(l) {
   const ok = await confirmDlg({ message: t('confirmArchive'), icon: '🗄️', danger: false, okLabel: t('archiveAction') });
   if (!ok) return false;
-  await db.update('listings', l.id, { status: 'archived' });
+  await db.update('properties', l.id, { status: 'archived' });
   toast(t('saved')); return true;
 }
 
 export async function restoreListing(l) {
   const ok = await confirmDlg({ message: t('confirmRestore'), icon: '↩️', danger: false, okLabel: t('restoreAction') });
   if (!ok) return false;
-  await db.update('listings', l.id, { status: 'available' });
+  await db.update('properties', l.id, { status: 'available' });
   toast(t('saved')); return true;
 }
 
 export async function deleteListing(l) {
   const ok = await confirmDlg({ message: t('confirmDeleteProp') });
   if (!ok) return false;
-  await db.remove('listings', l.id);
+  await db.remove('properties', l.id);
   toast(t('deleted')); return true;
 }
 
@@ -82,7 +82,7 @@ export function openMarkSold(l, onDone) {
     })) return;
     const fd = new FormData(form);
     try {
-      await db.update('listings', l.id, {
+      await db.update('properties', l.id, {
         status: 'sold',
         buyer_name: fd.get('buyer_name').trim(),
         sold_price: parseFloat(fd.get('sold_price')),

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Ring Roads">
+  <rect x="9.5" y="9.5" width="101" height="101" rx="44" ry="44" fill="none" stroke="#F97316" stroke-width="11"/>
+  <g font-family="'Arial Black','Helvetica Neue',Arial,sans-serif" font-weight="900" font-size="62" letter-spacing="-2">
+    <text x="53" y="83" text-anchor="middle" fill="#6A003C" transform="translate(53,0) scale(-1,1) translate(-53,0)">R</text>
+    <text x="70" y="83" text-anchor="middle" fill="#F97316">R</text>
+  </g>
+</svg>

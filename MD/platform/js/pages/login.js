@@ -3,13 +3,14 @@ import { t, lang, setLang } from '../lib/i18n.js';
 import { esc, validateForm, rules } from '../lib/utils.js';
 import { auth } from '../lib/supabase.js';
 import { toast } from '../lib/toast.js';
+import { logoSvg } from '../components/logo.js';
 
 export function renderLogin(onSuccess) {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="auth">
       <div class="auth__brandside">
-        <div class="row"><div class="logo-mark">RR</div>
+        <div class="row"><span class="rr-logo-tile">${logoSvg(44)}</span>
           <div><div style="font-weight:800">${esc(t('brand'))}</div>
           <div class="xs" style="opacity:.75;letter-spacing:.14em;font-weight:700">${esc(t('brandSub'))}</div></div>
         </div>

@@ -5,6 +5,7 @@ import { me, myRole, isAdmin, isMgmt, isLeader, myTeamId } from '../lib/store.js
 import { auth } from '../lib/supabase.js';
 import { storage } from '../lib/supabase.js';
 import { navigate } from '../lib/router.js';
+import { logoSvg } from './logo.js';
 
 let viewEl = null;
 
@@ -42,7 +43,7 @@ export function mountShell() {
       <div class="scrim" id="scrim"></div>
       <aside class="sidebar" id="sidebar">
         <div class="sidebar__brand">
-          <div class="logo-mark">RR</div>
+          ${logoSvg(40)}
           <div><div class="name">${esc(t('brand'))}</div><div class="sub">${esc(t('brandSub'))}</div></div>
         </div>
         <nav class="sidebar__nav" id="sidenav"></nav>

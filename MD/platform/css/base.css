@@ -55,8 +55,15 @@ img { max-width:100%; }
 }
 .logo-mark--lg { width:72px; height:72px; border-radius:22px; font-size:28px; }
 
+/* brand mark */
+.rr-logo { display:block; }
+.rr-logo-tile { display:inline-flex; background:#fff; border-radius:14px; padding:6px; box-shadow:0 6px 18px rgba(0,0,0,.18); }
+.sidebar__brand .rr-logo { filter:drop-shadow(0 3px 8px rgba(106,0,60,.18)); }
+
 /* boot splash */
 .boot { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--s6); background:var(--bg); }
+.boot__logo { animation:bootpulse 1.4s var(--ease) infinite; }
+@keyframes bootpulse { 0%,100%{ transform:scale(1); opacity:.9 } 50%{ transform:scale(1.06); opacity:1 } }
 .boot__bar { width:120px; height:4px; border-radius:var(--r-full); background:var(--line); overflow:hidden; }
 .boot__bar span { display:block; height:100%; width:40%; border-radius:var(--r-full); background:var(--primary); animation:boot 1s var(--ease) infinite; }
 @keyframes boot { 0%{transform:translateX(-120%)} 100%{transform:translateX(320%)} }

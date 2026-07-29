@@ -3,6 +3,7 @@ import { t } from '../lib/i18n.js';
 import { esc, initials, fmtDate, todayKey, validateForm, rules } from '../lib/utils.js';
 import { db, userId } from '../lib/supabase.js';
 import { store, profileById, isMgmt, isLeader, myTeamId, agentsOf } from '../lib/store.js';
+import { can } from '../lib/perms.js';
 import { openModal, confirmDlg } from '../components/modal.js';
 import { field, selectField, textareaField, readForm } from '../components/form.js';
 import { pagehead } from '../components/layout.js';
@@ -29,7 +30,7 @@ function openTaskForm(task, teamId, onDone) {
         ${selectField({ label: t('priority'), name: 'priority', options: TASK_PRIORITIES.map(p => ({ v: p, l: t(p) })), value: task?.priority || 'normal' })}
         ${textareaField({ label: t('notes'), name: 'notes', value: task?.notes, rows: 3 })}
         <div class="modal__actions span-2">
-          ${!isNew ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️</button>` : ''}
+          ${!isNew && can('delete:ops') ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️</button>` : ''}
           <button type="button" class="btn btn--outline" data-x>${esc(t('cancel'))}</button>
           <button type="submit" class="btn btn--primary">${esc(t('save'))}</button>
         </div>

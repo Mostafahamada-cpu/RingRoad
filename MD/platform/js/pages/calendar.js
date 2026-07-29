@@ -3,6 +3,7 @@ import { t, lang } from '../lib/i18n.js';
 import { esc, todayKey, validateForm, rules } from '../lib/utils.js';
 import { db, userId } from '../lib/supabase.js';
 import { store, isMgmt, isLeader, myTeamId, profileById } from '../lib/store.js';
+import { can } from '../lib/perms.js';
 import { openModal, confirmDlg } from '../components/modal.js';
 import { field, selectField, textareaField, readForm } from '../components/form.js';
 import { pagehead } from '../components/layout.js';
@@ -32,7 +33,7 @@ function openEventForm(ev, teamId, date, onDone) {
         ${field({ label: t('starts'), name: 'time', type: 'time', value: timeVal, required: true, dir: 'ltr' })}
         ${textareaField({ label: t('notes'), name: 'notes', value: ev?.notes, rows: 2 })}
         <div class="modal__actions span-2">
-          ${!isNew ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️</button>` : ''}
+          ${!isNew && can('delete:ops') ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️</button>` : ''}
           <button type="button" class="btn btn--outline" data-x>${esc(t('cancel'))}</button>
           <button type="submit" class="btn btn--primary">${esc(t('save'))}</button>
         </div>

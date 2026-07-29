@@ -10,9 +10,13 @@ import { logoSvg } from './logo.js';
 let viewEl = null;
 
 function navModel() {
-  const teamNav = (isLeader() || myRole() === 'agent')
-    ? (myTeamId() ? [{ id: 'myteam', ic: '🛡️', label: 'navMyTeam', path: 'teams/' + myTeamId() }] : [])
-    : [{ id: 'teams', ic: '🛡️', label: 'navTeams', path: 'teams' }];
+  // Management/Admin → all teams. Leader → own team only. Agent → no team nav
+  // (agents must not view other agents' data / manage teams).
+  const teamNav = isMgmt()
+    ? [{ id: 'teams', ic: '🛡️', label: 'navTeams', path: 'teams' }]
+    : (isLeader() && myTeamId())
+      ? [{ id: 'myteam', ic: '🛡️', label: 'navMyTeam', path: 'teams/' + myTeamId() }]
+      : [];
   return [
     { label: 'secWorkspace', items: [
       { id: 'dashboard', ic: '📊', label: 'navDashboard', path: 'dashboard' },

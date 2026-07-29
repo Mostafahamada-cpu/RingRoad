@@ -4,6 +4,30 @@ import { esc } from '../lib/utils.js';
 const req = (r) => r ? ' <span class="req">*</span>' : '';
 const err = '<div class="field__err"></div>';
 
+// Eye / eye-off icon — the crossbar animates in when the password is revealed.
+export const eyeIcon = `
+  <svg class="pw-eye" viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+    <path class="pw-eye__eye" d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"
+      stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle class="pw-eye__iris" cx="12" cy="12" r="3.1" stroke="currentColor" stroke-width="1.7"/>
+    <line class="pw-eye__slash" x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+  </svg>`;
+
+// Password input with an accessible, animated show/hide toggle.
+// Toggle behaviour is wired globally in lib/ui.js (event delegation).
+export function passwordField({ label, name = 'password', value = '', required = false, placeholder = '', hint = '', span2 = false, autocomplete = 'current-password' }) {
+  return `
+    <label class="field ${span2 ? 'span-2' : ''}">
+      <span class="field__label">${esc(label)}${req(required)}</span>
+      <div class="input-pw">
+        <input class="input" name="${esc(name)}" type="password" value="${esc(value ?? '')}"
+          placeholder="${esc(placeholder)}" dir="ltr" autocomplete="${esc(autocomplete)}">
+        <button type="button" class="pw-toggle" data-pw-toggle aria-label="${esc(label)} — show" aria-pressed="false" tabindex="0">${eyeIcon}</button>
+      </div>
+      ${err}${hint ? `<div class="field__hint">${esc(hint)}</div>` : ''}
+    </label>`;
+}
+
 export function field({ label, name, type = 'text', value = '', required = false, placeholder = '', hint = '', span2 = false, step, min, max, dir }) {
   return `
     <label class="field ${span2 ? 'span-2' : ''}">

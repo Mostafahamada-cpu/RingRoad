@@ -4,6 +4,7 @@ import { esc, validateForm, rules } from '../lib/utils.js';
 import { auth } from '../lib/supabase.js';
 import { toast } from '../lib/toast.js';
 import { logoSvg } from '../components/logo.js';
+import { passwordField } from '../components/form.js';
 
 export function renderLogin(onSuccess) {
   const app = document.getElementById('app');
@@ -33,11 +34,7 @@ export function renderLogin(onSuccess) {
               <input class="input" name="email" type="email" dir="ltr" autocomplete="email">
               <div class="field__err"></div>
             </label>
-            <label class="field">
-              <span class="field__label">${esc(t('password'))}</span>
-              <input class="input" name="password" type="password" dir="ltr" autocomplete="current-password">
-              <div class="field__err"></div>
-            </label>
+            ${passwordField({ label: t('password'), name: 'password', autocomplete: 'current-password' })}
             <button type="submit" class="btn btn--primary btn--lg btn--block">${esc(t('signIn'))}</button>
             <button type="button" class="btn btn--ghost btn--sm" id="forgot">${esc(t('forgotPw'))}</button>
           </form>

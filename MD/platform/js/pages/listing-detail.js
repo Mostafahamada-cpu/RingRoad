@@ -57,7 +57,7 @@ export async function pageListingDetail(params) {
           <button class="btn btn--primary btn--sm" id="a-approve">✓ ${esc(t('approve'))}</button>
           <button class="btn btn--danger btn--sm" id="a-reject">✕ ${esc(t('reject'))}</button></span>` : ''}
       </div>` : ''}
-    <div class="grid section" style="grid-template-columns:1.6fr 1fr">
+    <div class="split-main section">
       <div class="col" style="gap:20px">
         <div id="gal-slot"></div>
         <div class="card">

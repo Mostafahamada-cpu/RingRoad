@@ -6,6 +6,7 @@ import { mountShell, updateShell } from './components/layout.js';
 import { renderLogin } from './pages/login.js';
 import { t } from './lib/i18n.js';
 import { toast } from './lib/toast.js';
+import { initUi } from './lib/ui.js';
 
 import { pageDashboard } from './pages/dashboard.js';
 import { pageListings } from './pages/listings.js';
@@ -100,4 +101,5 @@ async function boot() {
 // Debug handle for development tooling (harmless in production).
 window.__rrp = { store, navigate };
 
+initUi();
 boot();

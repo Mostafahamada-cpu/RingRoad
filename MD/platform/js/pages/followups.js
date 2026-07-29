@@ -3,6 +3,7 @@ import { t } from '../lib/i18n.js';
 import { esc, validateForm, rules, todayKey } from '../lib/utils.js';
 import { db, userId } from '../lib/supabase.js';
 import { store, profileById, isMgmt, isLeader, myTeamId } from '../lib/store.js';
+import { can } from '../lib/perms.js';
 import { loadClients, loadFollowups, dueBucket } from '../lib/crm.js';
 import { openModal, confirmDlg } from '../components/modal.js';
 import { field, selectField, textareaField, readForm } from '../components/form.js';
@@ -34,7 +35,7 @@ function openFuForm(f, clients, onDone) {
         ${selectField({ label: t('agentInfo'), name: 'agent_id', options: agentOptions(), value: f?.agent_id || userId(), required: true })}
         ${textareaField({ label: t('notes'), name: 'notes', value: f?.notes })}
         <div class="modal__actions span-2">
-          ${!isNew ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️</button>` : ''}
+          ${!isNew && can('delete:ops') ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️</button>` : ''}
           <button type="button" class="btn btn--outline" data-x>${esc(t('cancel'))}</button>
           <button type="submit" class="btn btn--primary">${esc(t('save'))}</button>
         </div>

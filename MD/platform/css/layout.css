@@ -60,6 +60,10 @@
 .pagehead__actions { display:flex; gap:var(--s3); flex-wrap:wrap; }
 .section { margin-bottom:var(--s6); }
 
+/* Detail layout: main column + side rail; stacks on tablet/mobile */
+.split-main { display:grid; gap:var(--s5); grid-template-columns:1.6fr 1fr; align-items:start; }
+@media (max-width:900px){ .split-main { grid-template-columns:1fr; } }
+
 /* --- Auth --- */
 .auth { min-height:100vh; display:grid; grid-template-columns:1fr 1fr; }
 .auth__brandside {
@@ -88,6 +92,13 @@
   .topbar { padding:0 var(--s4); }
 }
 @media (max-width:640px){
-  .pagehead { flex-direction:column; align-items:stretch; }
-  .topbar__title { font-size:var(--fs-body); }
+  .pagehead { align-items:flex-start; }
+  .pagehead__actions { width:100%; }
+  .topbar { gap:var(--s3); }
+  .topbar__title { font-size:var(--fs-body); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+}
+/* Avatar-only profile button on narrow screens so the topbar never crowds */
+@media (max-width:560px){
+  .profilebtn .who { display:none; }
+  .content { padding:var(--s4) var(--s3); }
 }

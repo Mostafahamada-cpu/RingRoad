@@ -3,6 +3,7 @@ import { t } from '../lib/i18n.js';
 import { esc, money, compact, validateForm, rules } from '../lib/utils.js';
 import { db, userId } from '../lib/supabase.js';
 import { store, profileById, isMgmt, isLeader, myTeamId } from '../lib/store.js';
+import { can } from '../lib/perms.js';
 import { loadClients, loadDeals, loadFollowups, dealStageLabel, dealCommission } from '../lib/crm.js';
 import { loadListings } from '../lib/listings.js';
 import { openModal, confirmDlg } from '../components/modal.js';
@@ -32,7 +33,7 @@ async function openDealForm(d, clients, props, onDone) {
         ${selectField({ label: t('dealStage'), name: 'stage', options: DEAL_STAGES.map(s => ({ v: s, l: dealStageLabel(s) })), value: d?.stage || 'lead' })}
         ${selectField({ label: t('agentInfo'), name: 'agent_id', options: agentOptions(), value: d?.agent_id || userId(), required: true })}
         <div class="modal__actions span-2">
-          ${!isNew ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️ ${esc(t('del'))}</button>` : ''}
+          ${!isNew && can('delete:core') ? `<button type="button" class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️ ${esc(t('del'))}</button>` : ''}
           <button type="button" class="btn btn--outline" data-x>${esc(t('cancel'))}</button>
           <button type="submit" class="btn btn--primary">${esc(t('save'))}</button>
         </div>
@@ -116,9 +117,12 @@ export async function pageDeals() {
       ${statCard({ icon: '🎯', value: conv + '%', label: t('conversionRate') })}
       ${statCard({ icon: '💰', value: compact(revenue), label: t('revenue'), tone: 'burg' })}
     </div>
-    <div class="kanban">${board}</div>`;
+    <div class="kanban">${board}</div>
+    <button class="fab" id="add-fab" aria-label="${esc(t('addDeal'))}">＋</button>`;
 
-  el.querySelector('#add').onclick = () => openDealForm(null, clients, props, rerender);
+  const openAdd = () => openDealForm(null, clients, props, rerender);
+  el.querySelector('#add').onclick = openAdd;
+  el.querySelector('#add-fab').onclick = openAdd;
   el.querySelectorAll('[data-edit]').forEach(b => b.onclick = () =>
     openDealForm(deals.find(d => d.id === b.dataset.edit), clients, props, rerender));
   el.querySelectorAll('[data-mv]').forEach(b => b.onclick = () =>

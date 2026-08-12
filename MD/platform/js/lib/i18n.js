@@ -162,6 +162,21 @@ const en = {
   pool: 'Pool', gym: 'Gym', garden: 'Garden', security: 'Security', elevator: 'Elevator',
   balcony: 'Balcony', parkingAm: 'Parking', central_ac: 'Central A/C', smart_home: 'Smart home',
   sea_view: 'Sea view', clubhouse: 'Clubhouse', kids_area: 'Kids area',
+  // attendance
+  navAttendance: 'Attendance', attendanceTitle: 'Attendance',
+  attendanceSub: 'Clock in, clock out and track your working hours',
+  attnClockIn: 'Clock In', attnClockOut: 'Clock Out', attnTimeMarked: 'Time Marked',
+  attnWorkingHours: 'Working Hours', attnClockInLbl: 'Clock In', attnClockOutLbl: 'Clock Out',
+  attnNotIn: 'You haven’t clocked in yet today',
+  attnWorkingNow: 'Currently working — remember to clock out',
+  attnDone: 'Attendance complete for today ✅',
+  attnTodaySummary: 'Today’s summary', attnTimeline: 'Today’s timeline',
+  attnTeam: 'Team attendance — today', attnWorking: 'Working', attnAbsent: 'Not in',
+  attnClockedInAt: 'Clocked in at', attnClockedOutAt: 'Clocked out at',
+  attnInSuccess: 'Clocked in — have a great day!',
+  attnOutSuccess: 'Clocked out — see you tomorrow!',
+  attnErr: 'Something went wrong. Please try again.',
+  attnAlready: 'You have already clocked in today.',
 };
 
 const ar = {
@@ -292,6 +307,21 @@ const ar = {
   pool: 'حمام سباحة', gym: 'صالة رياضية', garden: 'حديقة', security: 'أمن', elevator: 'مصعد',
   balcony: 'شرفة', parkingAm: 'انتظار سيارات', central_ac: 'تكييف مركزي', smart_home: 'منزل ذكي',
   sea_view: 'إطلالة بحرية', clubhouse: 'نادي', kids_area: 'منطقة أطفال',
+  // attendance
+  navAttendance: 'الحضور', attendanceTitle: 'الحضور',
+  attendanceSub: 'سجّل حضورك وانصرافك وتابع ساعات عملك',
+  attnClockIn: 'تسجيل الحضور', attnClockOut: 'تسجيل الانصراف', attnTimeMarked: 'تم التسجيل',
+  attnWorkingHours: 'ساعات العمل', attnClockInLbl: 'الحضور', attnClockOutLbl: 'الانصراف',
+  attnNotIn: 'لم تسجّل حضورك اليوم بعد',
+  attnWorkingNow: 'أنت في العمل الآن — لا تنسَ تسجيل الانصراف',
+  attnDone: 'تم تسجيل حضورك لليوم ✅',
+  attnTodaySummary: 'ملخص اليوم', attnTimeline: 'المسار الزمني لليوم',
+  attnTeam: 'حضور الفريق — اليوم', attnWorking: 'يعمل', attnAbsent: 'غير حاضر',
+  attnClockedInAt: 'سجّل الحضور في', attnClockedOutAt: 'سجّل الانصراف في',
+  attnInSuccess: 'تم تسجيل الحضور — يومًا موفقًا!',
+  attnOutSuccess: 'تم تسجيل الانصراف — إلى اللقاء غدًا!',
+  attnErr: 'حدث خطأ ما. حاول مرة أخرى.',
+  attnAlready: 'لقد سجّلت حضورك اليوم بالفعل.',
 };
 
 const DICT = { en, ar };

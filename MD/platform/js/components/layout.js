@@ -20,6 +20,7 @@ function navModel() {
   return [
     { label: 'secWorkspace', items: [
       { id: 'dashboard', ic: '📊', label: 'navDashboard', path: 'dashboard' },
+      { id: 'attendance', ic: '🕒', label: 'navAttendance', path: 'attendance' },
       { id: 'properties', ic: '🏛️', label: 'navProperties', path: 'properties' },
       { id: 'clients', ic: '👤', label: 'navClients', path: 'clients' },
       { id: 'deals', ic: '📈', label: 'navDeals', path: 'deals' },

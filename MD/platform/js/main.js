@@ -9,6 +9,7 @@ import { toast } from './lib/toast.js';
 import { initUi } from './lib/ui.js';
 
 import { pageDashboard } from './pages/dashboard.js';
+import { pageAttendance } from './pages/attendance.js';
 import { pageListings } from './pages/listings.js';
 import { pageClients } from './pages/clients.js';
 import { pageDeals } from './pages/deals.js';
@@ -55,6 +56,7 @@ async function enterApp() {
 
   defineRoutes([
     { path: 'dashboard', page: pageDashboard, nav: 'dashboard', title: 'navDashboard' },
+    { path: 'attendance', page: pageAttendance, nav: 'attendance', title: 'navAttendance' },
     { path: 'properties', page: pageListings, nav: 'properties', title: 'navProperties' },
     { path: 'properties/new', page: (p) => pageListingForm({ id: 'new' }), nav: 'properties', title: 'addProperty' },
     { path: 'properties/:id', page: pageListingDetail, nav: 'properties', title: 'navProperties' },

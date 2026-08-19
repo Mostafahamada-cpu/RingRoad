@@ -3,9 +3,12 @@ export const SUPABASE_URL = 'https://cbjguowbrbxrthokbmpd.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_H_FVSTN6WJ86vqo9tcPV1Q_pSXRdF68';
 export const BUCKET = 'platform-images';
 
-// Where the public client view (client/) is published. Must match the rewrites
-// in ../vercel.json — used to build shareable /property/RR-1024 links.
-export const PUBLIC_SITE_BASE = '';
+// Origin of the public client view (client/), which is deployed as its own
+// Vercel project and therefore lives on its own domain. Used to build the
+// shareable /property/RR-1024 links shown on the property page. Point this at
+// the custom domain once one is attached; leave it empty to fall back to the
+// current origin (correct only if both apps are served from the same host).
+export const PUBLIC_SITE_URL = 'https://ring-road-client.vercel.app';
 export const SESSION_KEY = 'rrp_session';
 
 export const ROLES = ['admin', 'management', 'leader', 'agent'];

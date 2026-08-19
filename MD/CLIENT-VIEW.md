@@ -5,7 +5,8 @@ never register and never create a password: they browse, save, compare, share an
 the assigned agent.
 
 The admin & agent workspace in **`platform/`** is untouched — same routes, same roles, same
-CRM. The two apps only share the brand tokens, the design-system CSS and the Supabase keys.
+CRM. The two are deployed as separate Vercel projects, so `client/` carries its own copy of
+the shared design system and its own copy of the Supabase keys (see *Files* below).
 
 ```
 Properties → Search / Filter / Sort → Property card → Property details
@@ -23,7 +24,10 @@ Properties → Search / Filter / Sort → Property card → Property details
    - the `public_listings` view (the only thing `anon` can read)
    - the `property_requests` table + RLS
    - `rr_submit_property_request()` (the only thing `anon` can write)
-2. Deploy as before. `vercel.json` rewrites the four public routes onto `client/index.html`.
+2. Deploy. **`client/` is the Vercel project's Root Directory** — the project
+   `ring-road-client` is configured that way, so `https://<host>/` serves
+   `client/index.html` directly. `client/vercel.json` (which must live in that root to be
+   read at all) rewrites the four public routes onto it.
 3. Give each agent a WhatsApp number — **Settings → My profile** (their own) or
    **Users → edit** (an admin doing it for them). If left blank the agent's phone number is
    used instead.
@@ -39,7 +43,7 @@ Properties → Search / Filter / Sort → Property card → Property details
 
 The router works in two styles and picks one from the entry URL:
 
-- **path mode** — the deployed site, thanks to the rewrites in `vercel.json`.
+- **path mode** — the deployed site, thanks to the rewrites in `client/vercel.json`.
 - **hash mode** — `/client/#/property/RR-1024`, used automatically when the app is opened
   directly at `/client/` (no rewrites, e.g. plain static hosting or a local `http.server`).
 
@@ -120,12 +124,22 @@ type, so a monthly rent is never ranked against sale prices.
 
 ## Files
 
+Because `client/` is its own deploy root, nothing outside it is served: every asset path is
+absolute from this folder (`/css/…`, `/js/…`, `/assets/…`) and no file here may import from
+`../platform`. `tokens.css`, `base.css`, `components.css` and `assets/logo.svg` are therefore
+**synced copies** of the platform originals — if you edit the platform's, copy them over again.
+
 ```
 client/
-  index.html                shell (absolute asset paths — see the note in the file)
-  css/client.css            public-view components on top of the platform design system
+  index.html                shell (assets absolute from this root — see the note in the file)
+  vercel.json               rewrites + cache headers (must sit in the deploy root)
+  assets/logo.svg           synced copy of platform/assets/logo.svg
+  css/tokens.css            synced copy of platform/css/tokens.css
+  css/base.css              synced copy of platform/css/base.css
+  css/components.css        synced copy of platform/css/components.css
+  css/client.css            public-view components on top of that design system
   js/
-    config.js               keys re-exported from platform/js/config.js + client constants
+    config.js               Supabase keys (mirrored from platform/js/config.js) + constants
     main.js                 boot: router → shell → route
     lib/
       api.js                public_listings reads + the request RPC (anon only)

@@ -42,9 +42,10 @@ No build step — plain ES modules. Serve statically (Vercel zero-config, or loc
 
 A separate, login-free property site for clients — Properties / Favorites / Compare, a
 public `/property/RR-1024` page per listing, WhatsApp deep links to the assigned agent and a
-"Request details" form that files a lead into this CRM. It reuses the brand tokens and the
-component CSS but has its own router, state and data layer, and the admin workspace is
-unchanged by it. Run `platform-client-view.sql`, then see **CLIENT-VIEW.md**.
+"Request details" form that files a lead into this CRM. It is its own Vercel project (Root
+Directory `MD/client`), so it ships a synced copy of the design-system CSS and has its own
+router, state and data layer; the admin workspace is unchanged by it. Run
+`platform-client-view.sql`, then see **CLIENT-VIEW.md**.
 
 Inside the platform this adds one page — **Requests** (`#/requests`) — listing the leads that
 arrive from the public site; each one also creates a normal `clients` row so it flows through

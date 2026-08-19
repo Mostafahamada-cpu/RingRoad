@@ -4,9 +4,11 @@
      no session, no write access beyond the "Request details" RPC.
      Docs: ../CLIENT-VIEW.md · Schema: ../platform-client-view.sql
 
-     NOTE — the asset paths below are absolute because /property/RR-1024 is
-     rewritten to this file (see ../vercel.json). If the site is ever deployed
-     under a sub-path, prefix these four hrefs and the module src with it. -->
+     DEPLOYMENT — this folder IS the web root (Vercel project "ring-road-client"
+     has Root Directory = MD/client), so every asset below is absolute from this
+     folder: /css/…, /js/…, /assets/…. They must stay absolute rather than
+     relative because ./vercel.json rewrites /property/RR-1024 onto this file,
+     and a relative href would then resolve against /property/. -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -14,27 +16,27 @@
   <meta name="theme-color" content="#6A003C">
   <title>Ring Roads — Properties</title>
   <meta name="description" content="Browse apartments, villas and compounds for sale and rent with Ring Roads.">
-  <link rel="icon" type="image/svg+xml" href="/platform/assets/logo.svg">
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cbjguowbrbxrthokbmpd.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <!-- brand tokens + reset + shared components are reused from the platform so
-       both experiences stay on one design system -->
-  <link rel="stylesheet" href="/platform/css/tokens.css">
-  <link rel="stylesheet" href="/platform/css/base.css">
-  <link rel="stylesheet" href="/platform/css/components.css">
-  <link rel="stylesheet" href="/client/css/client.css">
+  <!-- brand tokens + reset + shared components: synced copies of the platform's
+       design system, so both experiences stay visually identical -->
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/client.css">
 </head>
 <body>
   <div id="app">
     <div class="boot">
-      <img class="boot__logo" src="/platform/assets/logo.svg" width="88" height="88" alt="Ring Roads">
+      <img class="boot__logo" src="/assets/logo.svg" width="88" height="88" alt="Ring Roads">
       <div class="boot__bar"><span></span></div>
     </div>
   </div>
   <div id="modal-root"></div>
   <div id="toast-root" aria-live="polite"></div>
-  <script type="module" src="/client/js/main.js"></script>
+  <script type="module" src="/js/main.js"></script>
 </body>
 </html>

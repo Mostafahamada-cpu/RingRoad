@@ -1,0 +1,59 @@
+/* ---------------------------------------------------------------------------
+   SYNCED COPY of platform/css/tokens.css — do not edit here.
+   The public client view is deployed as its own Vercel project whose Root
+   Directory is MD/client, so nothing outside this folder is served. The shared
+   design system therefore has to live inside the deploy root. If you change the
+   platform original, copy it over again so both apps stay identical.
+   --------------------------------------------------------------------------- */
+/* ============================================================================
+   Ring Roads Platform — design tokens.
+   Brand identity: Primary Orange #F97316 · Secondary Burgundy #6A003C · White.
+   Neutrals are warm (burgundy-tinted). No colors outside this system.
+   ========================================================================== */
+:root {
+  --font: "Manrope", "IBM Plex Sans Arabic", "Segoe UI", sans-serif;
+
+  /* brand ramps */
+  --orange-600:#EA580C; --orange-500:#F97316; --orange-400:#FB8C3C;
+  --orange-100:#FFE3CF; --orange-50:#FFF3EA;
+  --burg-900:#43001F;   --burg-700:#6A003C;   --burg-500:#93195B;
+  --burg-300:#C9679C;   --burg-100:#F5E2EC;   --burg-50:#FBF2F7;
+
+  /* warm neutrals (derived from burgundy tint) */
+  --ink:#2B1420; --ink-soft:#5C4450; --muted:#8E7A85;
+  --line:#F0E4EA; --line-strong:#E2D0DA;
+  --paper:#FFFFFF; --bg:#FAF6F8; --bg-sunken:#F4ECF1;
+
+  /* semantic (brand-pure: orange = positive, burgundy = danger/emphasis) */
+  --primary:var(--orange-500); --primary-strong:var(--orange-600);
+  --secondary:var(--burg-700); --secondary-strong:var(--burg-900);
+  --danger:var(--burg-500); --danger-bg:var(--burg-100);
+  --ok:var(--orange-600); --ok-bg:var(--orange-50);
+  --warn:#B45309; --warn-bg:#FFF0E0; /* burnt-orange warning, same hue family */
+
+  /* charts — mark colors validated for contrast on white (see PLATFORM.md) */
+  --chart-1:#E4560A; --chart-2:#A81D64; --chart-soft:#F5E2EC; --chart-grid:var(--line);
+
+  /* status */
+  --st-available:var(--orange-600); --st-available-bg:var(--orange-50);
+  --st-reserved:#B45309;            --st-reserved-bg:#FFF0E0;
+  --st-sold:var(--burg-700);        --st-sold-bg:var(--burg-100);
+  --st-archived:var(--muted);       --st-archived-bg:var(--bg-sunken);
+
+  /* elevation — soft, warm */
+  --sh-xs:0 1px 3px rgba(106,0,60,.05);
+  --sh-sm:0 2px 10px rgba(106,0,60,.07);
+  --sh-md:0 8px 24px rgba(106,0,60,.09);
+  --sh-lg:0 18px 48px rgba(67,0,31,.16);
+
+  /* geometry */
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-xl:26px; --r-full:999px;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px; --s12:48px;
+
+  /* type scale */
+  --fs-hero:32px; --fs-h1:24px; --fs-h2:19px; --fs-h3:16px;
+  --fs-body:14px; --fs-sm:13px; --fs-xs:12px; --fs-2xs:11px;
+
+  --sidebar-w:252px; --topbar-h:64px;
+  --ease:cubic-bezier(.22,.8,.32,1);
+}

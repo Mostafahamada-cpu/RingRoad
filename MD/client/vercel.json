@@ -1,0 +1,20 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "comment": "Config for the public client view. This file must sit in the Vercel project's Root Directory (MD/client) — a vercel.json anywhere above it is never read. /property/RR-1024 must open the property details page directly, so the four public routes are rewritten (not redirected) onto index.html at this root. Nothing here touches the admin & agent workspace in ../platform.",
+  "rewrites": [
+    { "source": "/property/:code", "destination": "/index.html" },
+    { "source": "/properties", "destination": "/index.html" },
+    { "source": "/favorites", "destination": "/index.html" },
+    { "source": "/compare", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)\\.(css|js|svg)",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/(.*)\\.html",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    }
+  ]
+}

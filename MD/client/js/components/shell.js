@@ -37,7 +37,7 @@ export function mountShell() {
     <div class="c-shell">
       <header class="c-header">
         <a class="c-brand" href="${esc(hrefFor({ name: 'properties' }))}" data-route="properties" aria-label="Ring Roads — home">
-          <img src="/platform/assets/logo.svg" width="34" height="34" alt="">
+          <img src="/assets/logo.svg" width="34" height="34" alt="">
           <span><span class="c-brand__name">Ring Roads</span><br><span class="c-brand__sub">REAL ESTATE</span></span>
         </a>
         <div class="c-header__spacer"></div>

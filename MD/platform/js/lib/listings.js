@@ -6,7 +6,7 @@ import { store, me, isMgmt, isLeader, myTeamId } from './store.js';
 import { toast } from './toast.js';
 import { openModal, confirmDlg } from '../components/modal.js';
 import { field } from '../components/form.js';
-import { PTYPES, PUBLIC_SITE_BASE } from '../config.js';
+import { PTYPES, PUBLIC_SITE_URL } from '../config.js';
 
 export const loadListings = () => db.list('properties', 'select=*&order=created_at.desc');
 
@@ -101,8 +101,10 @@ export function priceLine(l) {
 }
 
 // Public, shareable URL of a listing on the client view (client/).
-// Matches the /property/:code rewrite in vercel.json.
+// Matches the /property/:code rewrite in client/vercel.json.
 export function publicUrl(l) {
   const key = l?.code || l?.id;
-  return key ? location.origin + PUBLIC_SITE_BASE.replace(/\/$/, '') + '/property/' + encodeURIComponent(key) : null;
+  if (!key) return null;
+  const origin = (PUBLIC_SITE_URL || location.origin).replace(/\/$/, '');
+  return origin + '/property/' + encodeURIComponent(key);
 }

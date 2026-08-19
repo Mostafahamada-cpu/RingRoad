@@ -2,6 +2,7 @@
 import { t, lang, setLang } from '../lib/i18n.js';
 import { esc, initials } from '../lib/utils.js';
 import { me, myRole, isAdmin, isMgmt, isLeader, myTeamId } from '../lib/store.js';
+import { amTelesales } from '../lib/telesales.js';
 import { auth } from '../lib/supabase.js';
 import { storage } from '../lib/supabase.js';
 import { navigate } from '../lib/router.js';
@@ -25,6 +26,7 @@ function navModel() {
       { id: 'clients', ic: '👤', label: 'navClients', path: 'clients' },
       { id: 'deals', ic: '📈', label: 'navDeals', path: 'deals' },
       { id: 'followups', ic: '📞', label: 'navFollowups', path: 'followups' },
+      ...(amTelesales() ? [{ id: 'myapartments', ic: '📇', label: 'tsMyTitle', path: 'my-apartments' }] : []),
       { id: 'requests', ic: '📩', label: 'navRequests', path: 'requests' },
       { id: 'sold', ic: '🤝', label: 'navSold', path: 'sold' },
       ...(isMgmt() || isLeader() ? [{ id: 'archive', ic: '🗄️', label: 'navArchive', path: 'archive' }] : []),
@@ -35,6 +37,7 @@ function navModel() {
       { id: 'calendar', ic: '🗓️', label: 'navCalendar', path: 'calendar' },
     ]},
     { label: 'secAdmin', items: [
+      ...(isMgmt() ? [{ id: 'telesales', ic: '📞', label: 'tsTitle', path: 'telesales' }] : []),
       ...(isMgmt() ? [{ id: 'agents', ic: '💼', label: 'navAgents', path: 'agents' }] : []),
       ...(isAdmin() ? [{ id: 'users', ic: '👥', label: 'navUsers', path: 'users' }] : []),
       ...(isMgmt() ? [{ id: 'analytics', ic: '📈', label: 'navAnalytics', path: 'analytics' }] : []),

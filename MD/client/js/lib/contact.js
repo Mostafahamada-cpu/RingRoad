@@ -26,19 +26,31 @@ export function waNumber(raw) {
   return d.length >= 8 ? d : null;
 }
 
-/** The number that should receive this property's chats — agent first. */
-export const agentWaNumber = (l) => waNumber(l?.agent_whatsapp || l?.agent_phone) || waNumber(OFFICE_WHATSAPP);
+/**
+ * The number that should receive this property's chats.
+ * agent_whatsapp is resolved server-side to the ASSIGNED TELESALES employee's
+ * saved WhatsApp number (see public_listings in platform-telesales.sql). A phone
+ * number is never assumed to be a WhatsApp number, so when nothing is saved this
+ * returns null and the caller disables the button instead of linking nowhere.
+ */
+export const agentWaNumber = (l) => waNumber(l?.agent_whatsapp) || waNumber(OFFICE_WHATSAPP);
 
 /**
  * The pre-filled WhatsApp text. Every line is built from the property row, so
  * the client only has to press Send.
  */
 export function whatsappMessage(l) {
+  // Opens with the apartment number and project so the telesales employee knows
+  // the unit from the first line; the details below save the client typing.
+  const unit = l.code || l.id;
+  const opener = l.project
+    ? `Hello, I am interested in Apartment ${unit} in ${l.project}.`
+    : `Hello, I am interested in Apartment ${unit}.`;
   const lines = [
-    "Hi, I'm interested in this property.",
+    opener,
     '',
     `Property: ${l.title || '—'}`,
-    `Property ID: ${l.code || l.id}`,
+    `Property ID: ${unit}`,
   ];
   if (isNum(l.price) && Number(l.price) > 0) {
     lines.push(`Price: ${money(l.price)}${l.type === 'rent' ? ' / month' : ''}`);

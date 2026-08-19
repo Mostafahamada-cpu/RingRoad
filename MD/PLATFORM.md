@@ -51,6 +51,16 @@ Inside the platform this adds one page — **Requests** (`#/requests`) — listi
 arrive from the public site; each one also creates a normal `clients` row so it flows through
 the existing pipeline.
 
+## Telesales assignment
+
+Apartments can be assigned to telesales employees — manually, or distributed evenly across
+the active team in one click — and each employee gets a dashboard of just their own book.
+"Telesales" is a **department** (`profiles.department`), so the four-role RBAC below is
+unchanged. Run `platform-telesales.sql`, then see **TELESALES.md**.
+
+Adds two pages: **Telesales Management** (`#/telesales`, management/admin) and
+**My Apartments** (`#/my-apartments`, telesales only).
+
 ## Roles & permissions (enforced by RLS + UI)
 
 | Capability | Admin | Management | Team Leader | Agent |
@@ -83,6 +93,11 @@ fields: sold_date/buyer_name/sold_price/commission) · `tasks` · `events` · `c
 - `platform-client-view.sql` adds the public read surface: unique `RR-####` property codes,
   `properties.finishing/developer`, `profiles.whatsapp`, the `public_listings` view granted to
   `anon`, `property_requests` and the `rr_submit_property_request()` RPC.
+- `platform-telesales.sql` adds `profiles.department`, the `properties.assigned_telesales_id`
+  columns, `telesales_assignment_history`, and the `rr_assign_telesales()` /
+  `rr_distribute_apartments()` RPCs.
+- `platform-users-import.sql` provisions the 18 accounts from `Attendance-Credentials.pdf`
+  (creates only what is missing; never changes an existing password).
 - **Images are real uploads** to the public Storage bucket `platform-images`
   (`listings/{id}/…`, `avatars/{uid}/…`, `teams/{id}/…`); `listings.images` stores the ordered
   path list. Upload/reorder/delete happens in the drag-&-drop uploader.

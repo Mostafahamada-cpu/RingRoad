@@ -159,11 +159,16 @@ export async function pageProperty(view, code) {
             </div>
           </div>
           <div class="c-cta" style="margin-top:16px">
-            ${wa ? `<a class="btn btn--wa" id="wa" href="${esc(wa)}" target="_blank" rel="noopener">💬 WhatsApp Agent</a>` : ''}
+            ${wa
+              ? `<a class="btn btn--wa" id="wa" href="${esc(wa)}" target="_blank" rel="noopener">💬 Contact on WhatsApp</a>`
+              : `<button class="btn btn--wa" disabled aria-disabled="true"
+                   title="WhatsApp contact is not available.">💬 Contact on WhatsApp</button>`}
             <button class="btn btn--primary" id="req">📩 Request Details</button>
             ${l.agent_phone ? `<a class="btn btn--outline" href="tel:${esc(String(l.agent_phone).replace(/\s/g, ''))}">📞 Call agent</a>` : ''}
           </div>
-          <p class="xs muted" style="margin-top:12px">Your message is filled in automatically with this property's details — just press send.</p>
+          <p class="xs muted" style="margin-top:12px">${wa
+            ? "Your message is filled in automatically with this property's details — just press send."
+            : 'WhatsApp contact is not available. Use Request Details and an agent will call you back.'}</p>
         </div>
 
         <div class="card">

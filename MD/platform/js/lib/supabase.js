@@ -121,6 +121,11 @@ export const db = {
     method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(row),
   }),
   remove: (table, id) => request(`${REST}/${table}?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  // Postgres function call. Used for the operations the database must authorise
+  // itself (telesales assignment / distribution) rather than trusting the client.
+  rpc: (fn, args = {}) => request(`${REST}/rpc/${fn}`, {
+    method: 'POST', body: JSON.stringify(args),
+  }),
 };
 
 // --- Storage (public bucket) ---

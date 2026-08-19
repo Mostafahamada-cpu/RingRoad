@@ -1,6 +1,7 @@
 // Boot: session → profile → shell → routed pages.
 import { auth, setLogoutHandler, userId, getSession, db } from './lib/supabase.js';
 import { loadCore, store, me, on, isAdmin, isMgmt, isLeader } from './lib/store.js';
+import { amTelesales } from './lib/telesales.js';
 import { defineRoutes, setTarget, start, current, navigate } from './lib/router.js';
 import { mountShell, updateShell } from './components/layout.js';
 import { renderLogin } from './pages/login.js';
@@ -15,6 +16,8 @@ import { pageClients } from './pages/clients.js';
 import { pageDeals } from './pages/deals.js';
 import { pageFollowups } from './pages/followups.js';
 import { pageRequests } from './pages/requests.js';
+import { pageTelesales } from './pages/telesales.js';
+import { pageMyApartments } from './pages/my-apartments.js';
 import { pageListingForm } from './pages/listing-form.js';
 import { pageListingDetail } from './pages/listing-detail.js';
 import { pageSold } from './pages/sold.js';
@@ -66,6 +69,8 @@ async function enterApp() {
     { path: 'deals', page: pageDeals, nav: 'deals', title: 'navDeals' },
     { path: 'followups', page: pageFollowups, nav: 'followups', title: 'navFollowups' },
     { path: 'requests', page: pageRequests, nav: 'requests', title: 'reqTitle' },
+    { path: 'my-apartments', page: pageMyApartments, nav: 'myapartments', title: 'tsMyTitle', guard: amTelesales },
+    { path: 'telesales', page: pageTelesales, nav: 'telesales', title: 'tsTitle', guard: isMgmt },
     { path: 'sold', page: pageSold, nav: 'sold', title: 'navSold' },
     { path: 'archive', page: pageArchive, nav: 'archive', title: 'navArchive', guard: () => isMgmt() || isLeader() },
     { path: 'teams', page: pageTeams, nav: 'teams', title: 'navTeams', guard: isMgmt },

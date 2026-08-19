@@ -5,6 +5,7 @@ import { db, storage } from '../lib/supabase.js';
 import { profileById, teamById, isMgmt, isLeader, myTeamId } from '../lib/store.js';
 import { loadListings, canEditListing, canArchive, canManage, typeLabel, archiveListing, restoreListing, deleteListing, openMarkSold, publicUrl } from '../lib/listings.js';
 import { gallery } from '../components/gallery.js';
+import { telesalesOptions, assigneeName, assignTelesales, canAssign } from '../lib/telesales.js';
 import { listingCard, statusBadge } from '../components/cards.js';
 import { navigate, render as rerender } from '../lib/router.js';
 import { toast } from '../lib/toast.js';
@@ -114,6 +115,18 @@ export async function pageListingDetail(params) {
           </div>
         </div>` : ''}
         <div class="card">
+          <h3 style="margin-bottom:10px">📞 ${esc(t('tsAssignedTo'))}</h3>
+          ${canAssign() ? `
+            <select class="select" id="a-assign">
+              <option value="">— ${esc(t('tsUnassigned'))} —</option>
+              ${telesalesOptions().map(o => `
+                <option value="${esc(o.v)}" ${l.assigned_telesales_id === o.v ? 'selected' : ''}>${esc(o.l)}</option>`).join('')}
+            </select>
+            ${l.assigned_at ? `<div class="xs muted" style="margin-top:8px">${esc(t('tsAssignedAt'))}: ${esc(fmtDate(l.assigned_at))}</div>` : ''}`
+          : `<div class="small"><b>${esc(assigneeName(l) || t('tsUnassigned'))}</b>
+             ${l.assigned_at ? `<div class="xs muted">${esc(t('tsAssignedAt'))}: ${esc(fmtDate(l.assigned_at))}</div>` : ''}</div>`}
+        </div>
+        <div class="card">
           <h3 style="margin-bottom:12px">💼 ${esc(t('agentInfo'))}</h3>
           ${agent ? `
             <div class="row">
@@ -136,6 +149,10 @@ export async function pageListingDetail(params) {
 
   el.querySelector('#gal-slot').appendChild(gallery(Array.isArray(l.images) ? l.images : []));
   el.querySelector('#back').onclick = () => navigate('properties');
+  el.querySelector('#a-assign')?.addEventListener('change', async (e) => {
+    try { await assignTelesales(l.id, e.target.value || null); toast(t('saved')); rerender(); }
+    catch (err) { toast(err.message, 'error', 5000); }
+  });
   el.querySelector('#a-copy')?.addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(pub); toast(t('linkCopied')); }
     catch (_) { toast(pub, 'info', 6000); }

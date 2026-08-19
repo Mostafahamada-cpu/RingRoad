@@ -16,7 +16,7 @@ Properties → Search / Filter / Sort → Property card → Property details
 
 ## Setup (one time)
 
-1. Run **`platform-client-view.sql`** in the Supabase SQL editor. It is idempotent and only
+1. Run **`platform-client-view.sql`** then **`platform-telesales.sql`** in the Supabase SQL editor. It is idempotent and only
    adds objects — no existing table, column or policy is modified. It creates:
    - `properties.finishing` / `properties.developer` (and `project` if missing)
    - `profiles.whatsapp`
@@ -92,7 +92,7 @@ browsing) the lists fall back to memory for the session instead of breaking.
 `💬 WhatsApp Agent` opens `wa.me/<agent number>` with the message already written:
 
 ```
-Hi, I'm interested in this property.
+Hello, I am interested in Apartment RR-1024 in Mivida.
 
 Property: Fifth Settlement Apartment
 Property ID: RR-1024
@@ -110,10 +110,16 @@ https://<host>/property/RR-1024
 
 Every line comes from the property row, so the client types nothing and never has to
 remember the ID. Numbers are normalised for `wa.me` (`01001234567` → `201001234567`,
-dial code in `client/js/config.js`). The destination is **that property's** agent — there is
-no shared number. If an agent has neither WhatsApp nor phone, the button is hidden and
-`📩 Request Details` becomes the primary CTA (set `OFFICE_WHATSAPP` in
-`client/js/config.js` to route those to a company number instead).
+dial code in `client/js/config.js`).
+
+**Who receives it:** the apartment's **assigned telesales employee**. `public_listings`
+resolves `agent_whatsapp` to that person's saved `profiles.whatsapp`, falling back to the
+listing agent only when nobody is assigned — so there is never one shared number.
+
+A phone number is never assumed to be a WhatsApp number. If the assigned employee has not
+saved one, the button renders **disabled** with *"WhatsApp contact is not available."* and
+`📩 Request Details` carries the page — no `wa.me` link is generated that would go nowhere.
+Set `OFFICE_WHATSAPP` in `client/js/config.js` to route those to a company number instead.
 
 ## Price per m²
 

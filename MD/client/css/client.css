@@ -268,6 +268,9 @@ body { background: var(--bg); overflow-x: hidden; }
 .c-cta .btn { min-height: 50px; font-size: var(--fs-h3); }
 .btn--wa { color: #fff; background: linear-gradient(135deg, #25D366, #128C7E); box-shadow: 0 6px 16px rgba(18,140,126,.3); }
 .btn--wa:hover:not(:disabled) { filter: brightness(1.05); }
+/* no number saved for the assigned telesales employee — the button stays visible
+   so the layout does not jump, but it is inert and clearly unavailable */
+.btn--wa:disabled { background: var(--bg-sunken); color: var(--muted); box-shadow: none; cursor: not-allowed; }
 
 /* sticky mobile contact bar */
 .c-stickybar {

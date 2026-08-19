@@ -22,6 +22,10 @@ export const PTYPES = ['apartment', 'villa', 'townhouse', 'duplex', 'penthouse',
 export const GOVERNORATES = ['Cairo', 'Giza', 'Alexandria', 'Qalyubia', 'Red Sea', 'Matrouh', 'South Sinai', 'Suez', 'Ismailia', 'Other'];
 
 // Finishing levels (Egyptian market). Mirrored in client/js/config.js.
+// Business units. 'telesales' is the pool the apartment assignment draws from
+// (see platform-telesales.sql → rr_is_telesales).
+export const DEPARTMENTS = ['telesales', 'engineering', 'management', 'sales'];
+
 export const FINISHINGS = ['not_finished', 'semi_finished', 'fully_finished', 'super_lux', 'ultra_super_lux', 'furnished'];
 
 // Sale vs rent — properties.type

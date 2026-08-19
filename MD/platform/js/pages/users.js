@@ -10,7 +10,7 @@ import { field, selectField, passwordField, readForm } from '../components/form.
 import { pagehead } from '../components/layout.js';
 import { render as rerender } from '../lib/router.js';
 import { toast } from '../lib/toast.js';
-import { ROLES } from '../config.js';
+import { ROLES, DEPARTMENTS } from '../config.js';
 
 const ROLE_DESC = { admin: 'roleAdminDesc', management: 'roleMgmtDesc', leader: 'roleLeaderDesc', agent: 'roleAgentDesc' };
 const ROLE_ICON = { admin: '👑', management: '📊', leader: '🛡️', agent: '💼' };
@@ -44,6 +44,7 @@ function openUserForm(p, onDone) {
         ${field({ label: t('email'), name: 'email', type: 'email', value: p?.email, required: isNew, dir: 'ltr' })}
         ${field({ label: t('phone'), name: 'phone', type: 'tel', value: p?.phone, dir: 'ltr' })}
         ${field({ label: t('whatsapp'), name: 'whatsapp', type: 'tel', value: p?.whatsapp, dir: 'ltr', hint: t('whatsappHint') })}
+        ${selectField({ label: t('department'), name: 'department', options: DEPARTMENTS.map(d => ({ v: d, l: t('dept' + d.charAt(0).toUpperCase() + d.slice(1)) })), value: p?.department, emptyLabel: t('none') })}
         ${isNew ? passwordField({ label: t('tempPassword'), name: 'password', required: true, hint: '≥ 8', autocomplete: 'new-password' }) : field({ label: t('rating') + ' (0-5)', name: 'performance_rating', type: 'number', value: p?.performance_rating ?? 0, min: 0, max: 5, step: '0.5', dir: 'ltr' })}
         <div class="field ${isNew ? '' : 'span-2'}" data-teamwrap>
           <span class="field__label">${esc(t('assignTeam'))}</span>
@@ -84,13 +85,17 @@ function openUserForm(p, onDone) {
 
   form.onsubmit = async (e) => {
     e.preventDefault();
-    const spec = { name: [rules.required], performance_rating: [rules.numeric, rules.min(0), rules.max(5)] };
+    const spec = {
+      name: [rules.required], performance_rating: [rules.numeric, rules.min(0), rules.max(5)],
+      phone: [rules.phone], whatsapp: [rules.phone],
+    };
     if (isNew) { spec.email = [rules.required, rules.email]; spec.password = [rules.required, rules.minLen(8)]; }
     if (!validateForm(form, spec)) return;
     const d = readForm(form);
     const role = d.role;
     const patch = {
       name: d.name.trim(), phone: d.phone.trim() || null, whatsapp: d.whatsapp.trim() || null,
+      department: d.department || null,
       nationality: d.nationality.trim() || null,
       role, team_id: (role === 'leader' || role === 'agent') ? (d.team_id || null) : null,
       performance_rating: +d.performance_rating || 0,
@@ -132,6 +137,16 @@ export async function pageUsers() {
         <div class="row"><span class="avatar avatar--sm">${r.photo ? `<img src="${esc(storage.publicUrl(r.photo))}">` : esc(initials(r.name || r.email))}</span>
         <div><div class="cell-main">${esc(r.name || '—')}</div><div class="xs muted" dir="ltr">${esc(r.email || '')}</div></div></div>` },
       { key: 'phone', label: t('phone'), render: r => `<span dir="ltr">${esc(r.phone || '—')}</span>` },
+      { key: 'department', label: t('department'), sortable: true,
+        render: r => r.department
+          ? `<span class="badge badge--role">${esc(t('dept' + r.department.charAt(0).toUpperCase() + r.department.slice(1)) || r.department)}</span>`
+          : '<span class="muted">—</span>',
+        csv: r => r.department || '' },
+      { key: 'whatsapp', label: t('whatsapp'),
+        render: r => r.whatsapp
+          ? `<span dir="ltr" class="xs">${esc(r.whatsapp)}</span>`
+          : `<span class="badge badge--pending">${esc(t('tsNoWa'))}</span>`,
+        csv: r => r.whatsapp || '' },
       { key: 'role', label: t('role'), sortable: true, render: r => `<span class="badge badge--role">${esc(t(r.role))}</span>`, csv: r => t(r.role) },
       { key: 'team_id', label: t('team'), render: r => esc(teamById(r.team_id)?.name || '—'), csv: r => teamById(r.team_id)?.name || '' },
       { key: 'active', label: t('status'), sortable: true, render: r => r.active === false

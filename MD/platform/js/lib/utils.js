@@ -46,6 +46,15 @@ export const rules = {
   max: (max) => (v) => (String(v).trim() !== '' && num(v) > max) ? t('vMax') + ' ' + max : null,
   numeric: (v) => (String(v).trim() === '' || !isNaN(parseFloat(v))) ? null : t('vNumber'),
   minLen: (n) => (v) => (!v || String(v).trim().length >= n) ? null : t('vMinLen') + ' ' + n,
+  // Phone / WhatsApp: optional, but when given it must be dialable — 7-15 digits
+  // (ITU E.164 max), allowing +, spaces, dashes and parentheses as separators.
+  phone: (v) => {
+    const raw = String(v == null ? '' : v).trim();
+    if (!raw) return null;
+    if (!/^\+?[\d\s()-]{6,24}$/.test(raw)) return t('vPhone');
+    const digits = raw.replace(/\D/g, '');
+    return (digits.length >= 7 && digits.length <= 15) ? null : t('vPhone');
+  },
 };
 
 // Validate a form element: pass { fieldName: [rule,...] }. Marks .field.is-invalid.

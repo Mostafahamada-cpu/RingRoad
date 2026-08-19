@@ -61,7 +61,7 @@ export async function pageSettings() {
   el.querySelector('form').onsubmit = async (e) => {
     e.preventDefault();
     const form = e.target;
-    if (!validateForm(form, { name: [rules.required] })) return;
+    if (!validateForm(form, { name: [rules.required], phone: [rules.phone], whatsapp: [rules.phone] })) return;
     try {
       const photos = await up.commit('avatars/' + userId());
       const d = readForm(form);

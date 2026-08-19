@@ -3,7 +3,7 @@ import { t } from '../lib/i18n.js';
 import { esc, money, groupNum, compact, initials, fmtDate } from '../lib/utils.js';
 import { db, storage } from '../lib/supabase.js';
 import { profileById, teamById, isMgmt, isLeader, myTeamId } from '../lib/store.js';
-import { loadListings, canEditListing, canArchive, canManage, typeLabel, archiveListing, restoreListing, deleteListing, openMarkSold } from '../lib/listings.js';
+import { loadListings, canEditListing, canArchive, canManage, typeLabel, archiveListing, restoreListing, deleteListing, openMarkSold, publicUrl } from '../lib/listings.js';
 import { gallery } from '../components/gallery.js';
 import { listingCard, statusBadge } from '../components/cards.js';
 import { navigate, render as rerender } from '../lib/router.js';
@@ -16,6 +16,7 @@ export async function pageListingDetail(params) {
   const team = teamById(l.team_id);
   const el = document.createElement('div');
 
+  const pub = publicUrl(l);
   const facts = [
     ['🏷️', t('ptype'), typeLabel(l.ptype)],
     ['📐', t('area'), groupNum(l.area) + ' ' + t('sqm')],
@@ -25,6 +26,9 @@ export async function pageListingDetail(params) {
     ['📅', t('yearBuilt'), l.year_built ?? '—'],
     ['🚗', t('parking'), l.parking ?? 0],
     ['🛋️', t('furnished'), l.furnished ? t('yes') : '—'],
+    ['🎨', t('finishing'), l.finishing ? t(l.finishing) : '—'],
+    ['🏗️', t('project'), l.project || '—'],
+    ['🤝', t('dealType'), t(l.type === 'rent' ? 'forRent' : 'forSale')],
   ];
 
   const canApprove = l.approval === 'pending' && (isMgmt() || (isLeader() && l.team_id === myTeamId()));
@@ -64,6 +68,9 @@ export async function pageListingDetail(params) {
           <div class="row row--between row--wrap" style="margin-bottom:14px">
             <div>
               <h1 style="margin-bottom:4px">${esc(l.title)} ${l.featured ? '<span class="badge badge--featured">★</span>' : ''}</h1>
+              <div class="row row--wrap" style="gap:6px;margin-bottom:6px">
+                <span class="badge badge--role" dir="ltr">${esc(t('propertyId'))}: ${esc(l.code || '—')}</span>
+              </div>
               <div class="muted small">📍 ${esc([l.address, l.city, l.governorate].filter(Boolean).join(' · '))}</div>
             </div>
             <div style="text-align:end">
@@ -97,6 +104,15 @@ export async function pageListingDetail(params) {
             <div class="row row--between small"><span class="muted">${esc(t('soldDate'))}</span><b>${esc(fmtDate(l.sold_date))}</b></div>
           </div>
         </div>` : ''}
+        ${pub && l.approval === 'approved' && !['sold', 'archived'].includes(l.status) ? `
+        <div class="card">
+          <h3 style="margin-bottom:10px">🔗 ${esc(t('publicLink'))}</h3>
+          <div class="xs muted" dir="ltr" style="word-break:break-all;margin-bottom:12px">${esc(pub)}</div>
+          <div class="row" style="gap:8px">
+            <button class="btn btn--outline btn--sm grow" id="a-copy">📋 ${esc(t('copyLink'))}</button>
+            <a class="btn btn--ghost btn--sm" href="${esc(pub)}" target="_blank" rel="noopener">↗ ${esc(t('viewPublic'))}</a>
+          </div>
+        </div>` : ''}
         <div class="card">
           <h3 style="margin-bottom:12px">💼 ${esc(t('agentInfo'))}</h3>
           ${agent ? `
@@ -120,6 +136,10 @@ export async function pageListingDetail(params) {
 
   el.querySelector('#gal-slot').appendChild(gallery(Array.isArray(l.images) ? l.images : []));
   el.querySelector('#back').onclick = () => navigate('properties');
+  el.querySelector('#a-copy')?.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(pub); toast(t('linkCopied')); }
+    catch (_) { toast(pub, 'info', 6000); }
+  });
   el.querySelector('#a-edit')?.addEventListener('click', () => navigate('properties/' + l.id + '/edit'));
   el.querySelector('#a-sold')?.addEventListener('click', () => openMarkSold(l, rerender));
   el.querySelector('#a-arch')?.addEventListener('click', async () => { if (await archiveListing(l)) rerender(); });

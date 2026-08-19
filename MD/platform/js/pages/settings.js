@@ -23,6 +23,7 @@ export async function pageSettings() {
         <form class="col" style="gap:14px" novalidate>
           ${field({ label: t('name'), name: 'name', value: p?.name, required: true })}
           ${field({ label: t('phone'), name: 'phone', type: 'tel', value: p?.phone, dir: 'ltr' })}
+          ${field({ label: t('whatsapp'), name: 'whatsapp', type: 'tel', value: p?.whatsapp, dir: 'ltr', hint: t('whatsappHint') })}
           <div class="field"><span class="field__label">${esc(t('profilePhoto'))}</span><div data-up></div></div>
           <button class="btn btn--primary">${esc(t('save'))}</button>
         </form>
@@ -64,7 +65,10 @@ export async function pageSettings() {
     try {
       const photos = await up.commit('avatars/' + userId());
       const d = readForm(form);
-      await db.update('profiles', userId(), { name: d.name.trim(), phone: d.phone.trim() || null, photo: photos[0] || null });
+      await db.update('profiles', userId(), {
+        name: d.name.trim(), phone: d.phone.trim() || null,
+        whatsapp: d.whatsapp.trim() || null, photo: photos[0] || null,
+      });
       await loadCore();
       toast(t('profileSaved'));
       location.reload(); // refresh shell header

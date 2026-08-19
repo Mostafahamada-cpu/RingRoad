@@ -43,6 +43,7 @@ function openUserForm(p, onDone) {
         ${field({ label: t('nationality'), name: 'nationality', value: p?.nationality })}
         ${field({ label: t('email'), name: 'email', type: 'email', value: p?.email, required: isNew, dir: 'ltr' })}
         ${field({ label: t('phone'), name: 'phone', type: 'tel', value: p?.phone, dir: 'ltr' })}
+        ${field({ label: t('whatsapp'), name: 'whatsapp', type: 'tel', value: p?.whatsapp, dir: 'ltr', hint: t('whatsappHint') })}
         ${isNew ? passwordField({ label: t('tempPassword'), name: 'password', required: true, hint: '≥ 8', autocomplete: 'new-password' }) : field({ label: t('rating') + ' (0-5)', name: 'performance_rating', type: 'number', value: p?.performance_rating ?? 0, min: 0, max: 5, step: '0.5', dir: 'ltr' })}
         <div class="field ${isNew ? '' : 'span-2'}" data-teamwrap>
           <span class="field__label">${esc(t('assignTeam'))}</span>
@@ -89,7 +90,8 @@ function openUserForm(p, onDone) {
     const d = readForm(form);
     const role = d.role;
     const patch = {
-      name: d.name.trim(), phone: d.phone.trim() || null, nationality: d.nationality.trim() || null,
+      name: d.name.trim(), phone: d.phone.trim() || null, whatsapp: d.whatsapp.trim() || null,
+      nationality: d.nationality.trim() || null,
       role, team_id: (role === 'leader' || role === 'agent') ? (d.team_id || null) : null,
       performance_rating: +d.performance_rating || 0,
     };

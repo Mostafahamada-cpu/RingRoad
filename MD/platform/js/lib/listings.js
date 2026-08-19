@@ -6,7 +6,7 @@ import { store, me, isMgmt, isLeader, myTeamId } from './store.js';
 import { toast } from './toast.js';
 import { openModal, confirmDlg } from '../components/modal.js';
 import { field } from '../components/form.js';
-import { PTYPES } from '../config.js';
+import { PTYPES, PUBLIC_SITE_BASE } from '../config.js';
 
 export const loadListings = () => db.list('properties', 'select=*&order=created_at.desc');
 
@@ -98,4 +98,11 @@ export function openMarkSold(l, onDone) {
 
 export function priceLine(l) {
   return money(l.status === 'sold' && l.sold_price != null ? l.sold_price : l.price);
+}
+
+// Public, shareable URL of a listing on the client view (client/).
+// Matches the /property/:code rewrite in vercel.json.
+export function publicUrl(l) {
+  const key = l?.code || l?.id;
+  return key ? location.origin + PUBLIC_SITE_BASE.replace(/\/$/, '') + '/property/' + encodeURIComponent(key) : null;
 }

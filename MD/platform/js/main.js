@@ -14,6 +14,7 @@ import { pageListings } from './pages/listings.js';
 import { pageClients } from './pages/clients.js';
 import { pageDeals } from './pages/deals.js';
 import { pageFollowups } from './pages/followups.js';
+import { pageRequests } from './pages/requests.js';
 import { pageListingForm } from './pages/listing-form.js';
 import { pageListingDetail } from './pages/listing-detail.js';
 import { pageSold } from './pages/sold.js';
@@ -64,6 +65,7 @@ async function enterApp() {
     { path: 'clients', page: pageClients, nav: 'clients', title: 'navClients' },
     { path: 'deals', page: pageDeals, nav: 'deals', title: 'navDeals' },
     { path: 'followups', page: pageFollowups, nav: 'followups', title: 'navFollowups' },
+    { path: 'requests', page: pageRequests, nav: 'requests', title: 'reqTitle' },
     { path: 'sold', page: pageSold, nav: 'sold', title: 'navSold' },
     { path: 'archive', page: pageArchive, nav: 'archive', title: 'navArchive', guard: () => isMgmt() || isLeader() },
     { path: 'teams', page: pageTeams, nav: 'teams', title: 'navTeams', guard: isMgmt },

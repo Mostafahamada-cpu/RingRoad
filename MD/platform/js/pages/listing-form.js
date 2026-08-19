@@ -9,7 +9,7 @@ import { createUploader } from '../components/uploader.js';
 import { pagehead } from '../components/layout.js';
 import { navigate } from '../lib/router.js';
 import { toast } from '../lib/toast.js';
-import { GOVERNORATES, AMENITIES, STATUSES } from '../config.js';
+import { GOVERNORATES, AMENITIES, STATUSES, FINISHINGS, DEAL_TYPES } from '../config.js';
 
 export async function pageListingForm(params) {
   const isNew = params.id === 'new';
@@ -36,6 +36,10 @@ export async function pageListingForm(params) {
           ${field({ label: t('propertyTitle'), name: 'title', value: l.title, required: true, span2: true })}
           ${selectField({ label: t('ptype'), name: 'ptype', options: typeOptions(), value: l.ptype || 'apartment', required: true })}
           ${selectField({ label: t('status'), name: 'status', options: STATUSES.filter(s => s !== 'sold' || l.status === 'sold').map(s => ({ v: s, l: t(s) })), value: l.status || 'available' })}
+          ${selectField({ label: t('dealType'), name: 'type', options: DEAL_TYPES.map(v => ({ v, l: t(v === 'rent' ? 'forRent' : 'forSale') })), value: l.type || 'sale' })}
+          ${selectField({ label: t('finishing'), name: 'finishing', options: FINISHINGS.map(v => ({ v, l: t(v) })), value: l.finishing, emptyLabel: t('none') })}
+          ${field({ label: t('project'), name: 'project', value: l.project })}
+          ${field({ label: t('developer'), name: 'developer', value: l.developer })}
           ${field({ label: t('price') + ' (' + t('egp') + ')', name: 'price', type: 'number', value: l.price, required: true, dir: 'ltr', min: 0 })}
           ${field({ label: t('area') + ' (' + t('sqm') + ')', name: 'area', type: 'number', value: l.area, required: true, dir: 'ltr', min: 0 })}
           ${field({ label: t('bedrooms'), name: 'bedrooms', type: 'number', value: l.bedrooms, dir: 'ltr', min: 0, max: 20 })}
@@ -115,6 +119,8 @@ export async function pageListingForm(params) {
         description: d.description.trim(), status: d.status || 'available',
         agent_id: d.agent_id, team_id: d.team_id || (store.profiles.find(p => p.id === d.agent_id)?.team_id ?? null),
         furnished: !!d.furnished, featured: !!d.featured,
+        type: d.type || 'sale', finishing: d.finishing || null,
+        project: d.project.trim() || null, developer: d.developer.trim() || null,
         lat: numOrNull(d.lat), lng: numOrNull(d.lng),
         amenities: d.amenities || [], images,
         // Agents' submissions need approval; management/leaders publish instantly.
@@ -122,9 +128,9 @@ export async function pageListingForm(params) {
       };
       // Compat with the original app's NOT NULL columns on `properties`.
       if (isNew) {
-        row.code = 'RR-' + Date.now().toString().slice(-6);
+        // `code` (RR-1024) is assigned by the trg_properties_code trigger from
+        // platform-client-view.sql — it owns the sequence, so it stays unique.
         row.address_en = addr; row.address_ar = addr;
-        row.type = 'sale';
       }
       if (isNew) await db.create('properties', { id, ...row });
       else await db.update('properties', l.id, row);

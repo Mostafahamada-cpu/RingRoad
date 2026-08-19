@@ -25,6 +25,7 @@ function navModel() {
       { id: 'clients', ic: '👤', label: 'navClients', path: 'clients' },
       { id: 'deals', ic: '📈', label: 'navDeals', path: 'deals' },
       { id: 'followups', ic: '📞', label: 'navFollowups', path: 'followups' },
+      { id: 'requests', ic: '📩', label: 'navRequests', path: 'requests' },
       { id: 'sold', ic: '🤝', label: 'navSold', path: 'sold' },
       ...(isMgmt() || isLeader() ? [{ id: 'archive', ic: '🗄️', label: 'navArchive', path: 'archive' }] : []),
     ]},

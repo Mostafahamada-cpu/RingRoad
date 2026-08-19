@@ -2,6 +2,10 @@
 export const SUPABASE_URL = 'https://cbjguowbrbxrthokbmpd.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_H_FVSTN6WJ86vqo9tcPV1Q_pSXRdF68';
 export const BUCKET = 'platform-images';
+
+// Where the public client view (client/) is published. Must match the rewrites
+// in ../vercel.json — used to build shareable /property/RR-1024 links.
+export const PUBLIC_SITE_BASE = '';
 export const SESSION_KEY = 'rrp_session';
 
 export const ROLES = ['admin', 'management', 'leader', 'agent'];
@@ -13,6 +17,12 @@ export const APPROVALS = ['pending', 'approved', 'rejected'];
 export const PTYPES = ['apartment', 'villa', 'townhouse', 'duplex', 'penthouse', 'studio', 'chalet', 'office', 'retail', 'land'];
 
 export const GOVERNORATES = ['Cairo', 'Giza', 'Alexandria', 'Qalyubia', 'Red Sea', 'Matrouh', 'South Sinai', 'Suez', 'Ismailia', 'Other'];
+
+// Finishing levels (Egyptian market). Mirrored in client/js/config.js.
+export const FINISHINGS = ['not_finished', 'semi_finished', 'fully_finished', 'super_lux', 'ultra_super_lux', 'furnished'];
+
+// Sale vs rent — properties.type
+export const DEAL_TYPES = ['sale', 'rent'];
 
 export const AMENITIES = ['pool', 'gym', 'garden', 'security', 'elevator', 'balcony', 'parking', 'central_ac', 'smart_home', 'sea_view', 'clubhouse', 'kids_area'];
 

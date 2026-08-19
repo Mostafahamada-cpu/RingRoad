@@ -38,6 +38,18 @@ platform/
 No build step — plain ES modules. Serve statically (Vercel zero-config, or locally via
 `.claude/serve.ps1` → `http://localhost:8123/platform/index.html`).
 
+## Public client view (`client/`)
+
+A separate, login-free property site for clients — Properties / Favorites / Compare, a
+public `/property/RR-1024` page per listing, WhatsApp deep links to the assigned agent and a
+"Request details" form that files a lead into this CRM. It reuses the brand tokens and the
+component CSS but has its own router, state and data layer, and the admin workspace is
+unchanged by it. Run `platform-client-view.sql`, then see **CLIENT-VIEW.md**.
+
+Inside the platform this adds one page — **Requests** (`#/requests`) — listing the leads that
+arrive from the public site; each one also creates a normal `clients` row so it flows through
+the existing pipeline.
+
 ## Roles & permissions (enforced by RLS + UI)
 
 | Capability | Admin | Management | Team Leader | Agent |
@@ -67,6 +79,9 @@ fields: sold_date/buyer_name/sold_price/commission) · `tasks` · `events` · `c
 - A trigger on `auth.users` auto-creates a profile (role `agent`) for every new account.
 - `rrp_role()` / `rrp_team()` security-definer helpers drive all RLS policies.
 - A guard trigger blocks role self-escalation by non-admins.
+- `platform-client-view.sql` adds the public read surface: unique `RR-####` property codes,
+  `properties.finishing/developer`, `profiles.whatsapp`, the `public_listings` view granted to
+  `anon`, `property_requests` and the `rr_submit_property_request()` RPC.
 - **Images are real uploads** to the public Storage bucket `platform-images`
   (`listings/{id}/…`, `avatars/{uid}/…`, `teams/{id}/…`); `listings.images` stores the ordered
   path list. Upload/reorder/delete happens in the drag-&-drop uploader.

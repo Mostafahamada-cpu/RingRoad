@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- Ring Roads — PUBLIC CLIENT VIEW. Browse properties without an account.
+     Completely separate from platform/ (the admin & agent workspace): no login,
+     no session, no write access beyond the "Request details" RPC.
+     Docs: ../CLIENT-VIEW.md · Schema: ../platform-client-view.sql
+
+     NOTE — the asset paths below are absolute because /property/RR-1024 is
+     rewritten to this file (see ../vercel.json). If the site is ever deployed
+     under a sub-path, prefix these four hrefs and the module src with it. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#6A003C">
+  <title>Ring Roads — Properties</title>
+  <meta name="description" content="Browse apartments, villas and compounds for sale and rent with Ring Roads.">
+  <link rel="icon" type="image/svg+xml" href="/platform/assets/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cbjguowbrbxrthokbmpd.supabase.co" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- brand tokens + reset + shared components are reused from the platform so
+       both experiences stay on one design system -->
+  <link rel="stylesheet" href="/platform/css/tokens.css">
+  <link rel="stylesheet" href="/platform/css/base.css">
+  <link rel="stylesheet" href="/platform/css/components.css">
+  <link rel="stylesheet" href="/client/css/client.css">
+</head>
+<body>
+  <div id="app">
+    <div class="boot">
+      <img class="boot__logo" src="/platform/assets/logo.svg" width="88" height="88" alt="Ring Roads">
+      <div class="boot__bar"><span></span></div>
+    </div>
+  </div>
+  <div id="modal-root"></div>
+  <div id="toast-root" aria-live="polite"></div>
+  <script type="module" src="/client/js/main.js"></script>
+</body>
+</html>

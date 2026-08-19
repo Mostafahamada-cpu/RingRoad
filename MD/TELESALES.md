@@ -22,21 +22,29 @@ Run in the Supabase SQL editor, in this order:
 3. **`platform-telesales.sql`** — everything in the table above
 4. **`platform-users-import.sql`** — the 18 accounts from `Attendance-Credentials.pdf`
 
+If you already ran an earlier copy of `platform-telesales.sql`, run
+**`platform-telesales-fix.sql`** as well: the first version of
+`rr_distribute_apartments()` aborted on an unqualified `DELETE` (Supabase's safeupdate
+guard) and `rr_assign_telesales()` violated the `assignment_status` CHECK, so nothing was
+ever assigned. That file replaces the three functions and explains both faults.
+
 ## Roles vs departments
 
 `role` stays `admin | management | leader | agent` — every existing policy, guard and
 permission check keeps working exactly as before. "Telesales" is a **department**, so
 someone can be a telesales *agent* or a telesales *team leader* without inventing a fifth
-role.
+role — and only the agents receive apartments.
 
 An account may receive apartments only when **all** of these hold (`rr_is_telesales()`):
 
 - `active = true`
-- `lower(department) = 'telesales'`
-- `role` is **not** `admin` and **not** `management`
+- `lower(btrim(department)) = 'telesales'`
+- `role = 'agent'`
 
-Engineers, admins, management and deactivated accounts are therefore never assigned
-anything, by construction rather than by remembering to filter in the UI.
+Engineers, admins, management, deactivated accounts **and telesales team leaders** are
+therefore never assigned anything, by construction rather than by remembering to filter in
+the UI. A team leader supervises the book rather than carrying one, so Mr. Sayed
+(`role = 'leader'`, `department = 'telesales'`) is correctly excluded.
 
 ## Assigning
 
@@ -95,7 +103,13 @@ returns nothing for anyone else's apartments.
 | assignment history | all | only rows about their own apartments | none |
 
 Both RPCs re-check `rrp_is_mgmt()` server-side, so a telesales user calling them directly
-gets `not_authorised` regardless of what the UI shows. RLS is never disabled.
+gets `not_authorised` regardless of what the UI shows — verified against the live database.
+RLS is never disabled.
+
+> **Check RLS is actually on.** The table above only holds while row level security is
+> enforced. It was found switched off on this database (an agent could read every property,
+> client and deal), which section 4 of `platform-telesales-fix.sql` re-asserts. Confirm with:
+> `select relname, relrowsecurity from pg_class where relnamespace='public'::regnamespace;`
 
 ## WhatsApp contact
 

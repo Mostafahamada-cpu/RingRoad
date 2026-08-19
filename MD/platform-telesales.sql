@@ -43,15 +43,16 @@ create index if not exists idx_profiles_department on public.profiles(department
 -- Who may be given apartments. Deliberately strict:
 --   • must be active
 --   • must be in the telesales department
---   • never an admin or management account, even if their department says otherwise
+--   • must be role 'agent' — a telesales TEAM LEADER supervises, so leaders,
+--     admins, management and engineers are all excluded by construction
 create or replace function public.rr_is_telesales(p_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.profiles p
      where p.id = p_id
        and p.active is true
-       and lower(coalesce(p.department, '')) = 'telesales'
-       and p.role not in ('admin', 'management')
+       and lower(btrim(coalesce(p.department, ''))) = 'telesales'
+       and p.role = 'agent'
   )
 $$;
 
@@ -220,6 +221,7 @@ language plpgsql security definer set search_path = public as $$
 declare
   v_prev   uuid;
   v_action text;
+  v_status text;
 begin
   if not public.rrp_is_mgmt() then
     raise exception 'not_authorised' using errcode = '42501';
@@ -232,7 +234,7 @@ begin
   end if;
 
   if p_telesales is not null and not public.rr_is_telesales(p_telesales) then
-    raise exception 'not_an_active_telesales_user' using errcode = '22023';
+    raise exception 'not_an_active_telesales_agent' using errcode = '22023';
   end if;
 
   if p_telesales is null then
@@ -245,20 +247,28 @@ begin
     v_action := 'reassign';
   end if;
 
+  -- the history table stores the VERB, the column stores the STATE
+  v_status := case v_action
+                when 'unassign' then 'unassigned'
+                when 'reassign' then 'reassigned'
+                else 'assigned'
+              end;
+
   update public.properties
      set assigned_telesales_id = p_telesales,
          assigned_at           = case when p_telesales is null then null else now() end,
          assigned_by           = case when p_telesales is null then null else auth.uid() end,
-         assignment_status     = case when p_telesales is null then 'unassigned' else v_action end
+         assignment_status     = v_status
    where id = p_property;
 
   insert into public.telesales_assignment_history
     (property_id, from_telesales_id, to_telesales_id, action, changed_by)
   values (p_property, v_prev, p_telesales, v_action, auth.uid());
 
-  return json_build_object('changed', true, 'action', v_action);
+  return json_build_object('changed', true, 'action', v_action, 'status', v_status);
 end $$;
 
+revoke all on function public.rr_assign_telesales(uuid, uuid) from public;
 revoke all on function public.rr_assign_telesales(uuid, uuid) from public;
 grant execute on function public.rr_assign_telesales(uuid, uuid) to authenticated;
 
@@ -286,69 +296,75 @@ returns json
 language plpgsql security definer set search_path = public as $$
 declare
   v_action  text := case when p_redistribute then 'redistribute' else 'distribute' end;
-  v_pool    int;
-  v_cleared int := 0;
-  v_done    int := 0;
+  v_ids     uuid[];
+  v_load    integer[];
+  v_n       integer;
+  v_i       integer;
+  v_best    integer;
+  v_cnt     integer;
+  v_cleared integer := 0;
+  v_done    integer := 0;
   v_prop    record;
-  v_pick    uuid;
-  v_prev    uuid;
+  v_per     json;
 begin
   if not public.rrp_is_mgmt() then
     raise exception 'not_authorised' using errcode = '42501';
   end if;
 
-  -- current head-count and load per eligible employee
-  create temporary table if not exists _rr_load (tid uuid primary key, n integer not null default 0)
-    on commit drop;
-  delete from _rr_load;
-
-  insert into _rr_load (tid, n)
-  select p.id, 0
+  -- eligible team, in a stable order
+  select array_agg(p.id order by lower(coalesce(p.name, p.email, '')), p.id)
+    into v_ids
     from public.profiles p
    where public.rr_is_telesales(p.id);
 
-  select count(*) into v_pool from _rr_load;
-  if v_pool = 0 then
+  v_n := coalesce(array_length(v_ids, 1), 0);
+  if v_n = 0 then
     raise exception 'no_active_telesales' using errcode = '22023';
   end if;
+
+  v_load := array_fill(0, array[v_n]);
 
   if p_redistribute then
     with cleared as (
       update public.properties
-         set assigned_telesales_id = null, assigned_at = null,
-             assigned_by = null, assignment_status = 'unassigned'
+         set assigned_telesales_id = null,
+             assigned_at           = null,
+             assigned_by           = null,
+             assignment_status     = 'unassigned'
        where assigned_telesales_id is not null
          and coalesce(status, 'available') not in ('sold', 'rented', 'archived')
       returning id
     )
     select count(*) into v_cleared from cleared;
   else
-    -- start from everyone's existing workload so the top-up levels the team
-    update _rr_load l
-       set n = c.cnt
-      from (select assigned_telesales_id tid, count(*) cnt
-              from public.properties
-             where assigned_telesales_id is not null
-               and coalesce(status, 'available') not in ('sold', 'rented', 'archived')
-             group by 1) c
-     where c.tid = l.tid;
+    -- seed each counter with what that person already carries, so a top-up
+    -- levels the team instead of blindly cycling
+    for v_i in 1 .. v_n loop
+      select count(*) into v_cnt
+        from public.properties
+       where assigned_telesales_id = v_ids[v_i]
+         and coalesce(status, 'available') not in ('sold', 'rented', 'archived');
+      v_load[v_i] := v_cnt;
+    end loop;
   end if;
 
   for v_prop in
-    select id, assigned_telesales_id
+    select id
       from public.properties
      where assigned_telesales_id is null
        and coalesce(status, 'available') not in ('sold', 'rented', 'archived')
      order by created_at, id
   loop
-    select l.tid into v_pick
-      from _rr_load l
-      join public.profiles p on p.id = l.tid
-     order by l.n asc, lower(coalesce(p.name, p.email, '')), l.tid
-     limit 1;
+    -- lowest current load wins; strict < keeps the earlier (name-ordered) person
+    v_best := 1;
+    for v_i in 2 .. v_n loop
+      if v_load[v_i] < v_load[v_best] then
+        v_best := v_i;
+      end if;
+    end loop;
 
     update public.properties
-       set assigned_telesales_id = v_pick,
+       set assigned_telesales_id = v_ids[v_best],
            assigned_at           = now(),
            assigned_by           = auth.uid(),
            assignment_status     = 'assigned'
@@ -356,25 +372,34 @@ begin
 
     insert into public.telesales_assignment_history
       (property_id, from_telesales_id, to_telesales_id, action, changed_by, note)
-    values (v_prop.id, null, v_pick, v_action, auth.uid(),
+    values (v_prop.id, null, v_ids[v_best], v_action, auth.uid(),
             case when p_redistribute then 'Redistribute All' else 'Distribute unassigned' end);
 
-    update _rr_load set n = n + 1 where tid = v_pick;
+    v_load[v_best] := v_load[v_best] + 1;
     v_done := v_done + 1;
   end loop;
 
+  select coalesce(json_agg(json_build_object('id', s.id, 'name', s.name, 'count', s.cnt)
+                           order by s.cnt desc, s.name), '[]'::json)
+    into v_per
+    from (
+      select v_ids[g.i]                    as id,
+             coalesce(p.name, p.email, '') as name,
+             v_load[g.i]                   as cnt
+        from generate_subscripts(v_ids, 1) as g(i)
+        join public.profiles p on p.id = v_ids[g.i]
+    ) s;
+
   return json_build_object(
-    'action', v_action,
-    'telesales', v_pool,
-    'cleared', v_cleared,
-    'assigned', v_done,
-    'per_agent', coalesce((
-      select json_agg(json_build_object('id', l.tid, 'name', coalesce(p.name, p.email), 'count', l.n)
-                      order by l.n desc, lower(coalesce(p.name, p.email, '')))
-        from _rr_load l join public.profiles p on p.id = l.tid), '[]'::json)
+    'action',    v_action,
+    'telesales', v_n,
+    'cleared',   v_cleared,
+    'assigned',  v_done,
+    'per_agent', v_per
   );
 end $$;
 
+revoke all on function public.rr_distribute_apartments(boolean) from public;
 revoke all on function public.rr_distribute_apartments(boolean) from public;
 grant execute on function public.rr_distribute_apartments(boolean) to authenticated;
 

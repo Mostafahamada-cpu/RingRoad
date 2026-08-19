@@ -72,12 +72,19 @@ export async function pageTelesales() {
     });
     if (!ok) return;
 
+    const banner = el.querySelector('#ts-error');
+    banner.hidden = true;
     try {
       const res = await distributeApartments(redistribute);
       toast(describeDistribution(res), 'success', 7000);
       rerender();
     } catch (err) {
-      toast(err.message, 'error', 6000);
+      // A transient toast is too easy to miss for something this consequential,
+      // so a failed distribution also stays on the page until the next attempt.
+      toast(err.message, 'error', 8000);
+      banner.hidden = false;
+      banner.querySelector('[data-msg]').textContent = err.message;
+      banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
@@ -87,6 +94,17 @@ export async function pageTelesales() {
         <button class="btn btn--outline" id="redistribute">♻️ ${esc(t('tsRedistribute'))}</button>
         <button class="btn btn--primary" id="distribute">📦 ${esc(t('tsDistribute'))}</button>
       </div>`)}
+
+    <div class="card section" id="ts-error" hidden
+         style="border-color:var(--danger);background:var(--danger-bg)">
+      <div class="row" style="gap:10px;align-items:flex-start">
+        <span style="font-size:20px">⛔</span>
+        <div class="grow">
+          <b>${esc(t('tsDistributeFailed'))}</b>
+          <div class="small" data-msg style="margin-top:4px;word-break:break-word"></div>
+        </div>
+      </div>
+    </div>
 
     <div class="grid grid--4 section">
       <div class="card"><div class="stat">

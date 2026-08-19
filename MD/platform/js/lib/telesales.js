@@ -10,12 +10,17 @@ export const TELESALES_DEPT = 'telesales';
 
 const dept = (p) => String(p?.department || '').trim().toLowerCase();
 
-/** Eligible to be assigned apartments: active, telesales, never admin/management. */
+/**
+ * Eligible to be assigned apartments — mirrors public.rr_is_telesales():
+ * active + department 'telesales' + role 'agent'.
+ * A telesales TEAM LEADER supervises rather than carries a book, so leaders are
+ * excluded here exactly as they are in the database.
+ */
 export function isTelesales(p) {
   return !!p
     && p.active !== false
     && dept(p) === TELESALES_DEPT
-    && !['admin', 'management'].includes(p.role);
+    && p.role === 'agent';
 }
 
 /** The assignment dropdown — only active telesales, sorted by name. */

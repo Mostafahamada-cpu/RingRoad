@@ -115,7 +115,8 @@
 @media (max-width:640px){ .form-grid { grid-template-columns:1fr; } }
 .searchbox { position:relative; }
 .searchbox .input { padding-inline-start:38px; }
-.searchbox::before { content:"🔍"; position:absolute; inset-inline-start:13px; top:50%; transform:translateY(-50%); font-size:13px; opacity:.6; }
+/* The portal renders a real search icon inside .c-searchbox instead of an
+   emoji pseudo-element; the legacy rule is kept only as a padding reset. */
 
 /* password input with animated show/hide toggle */
 .input-pw { position:relative; }

@@ -3,6 +3,8 @@ import {
   esc, money, areaText, ptypeLabel, dealTypeLabel, finishingLabel, amenityLabel,
   locationText, priceSuffix, pricePerSqmText, listOf, isNum,
 } from '../lib/format.js';
+import { icon } from '../lib/icons.js';
+import { purposeOf, PURPOSE_META } from '../lib/purpose.js';
 import { getOne, all, loadAll } from '../lib/catalog.js';
 import { imageUrl, submitRequest } from '../lib/api.js';
 import { emptyState, openModal, toast } from '../lib/ui.js';
@@ -27,13 +29,13 @@ export async function pageProperty(view, code) {
   try {
     l = await getOne(code);
   } catch (err) {
-    view.innerHTML = emptyState({ icon: '⚠️', title: 'Could not load this property', text: err.message });
+    view.innerHTML = emptyState({ icon: 'alert', title: 'Could not load this property', text: err.message });
     return;
   }
 
   if (!l) {
     view.innerHTML = emptyState({
-      icon: '🔍',
+      icon: 'search',
       title: 'Property not found',
       text: `We could not find ${code}. It may have been sold or taken off the market.`,
       actionHtml: `<a class="btn btn--primary" href="${esc(hrefFor({ name: 'properties' }))}" data-route="properties">Browse all properties</a>`,
@@ -51,19 +53,19 @@ export async function pageProperty(view, code) {
   const hasMap = isNum(l.lat) && isNum(l.lng);
 
   const facts = [
-    ['📐', 'Area', areaText(l.area)],
-    ['🛏', 'Bedrooms', isNum(l.bedrooms) ? String(l.bedrooms) : '—'],
-    ['🛁', 'Bathrooms', isNum(l.bathrooms) ? String(l.bathrooms) : '—'],
-    ['🏷️', 'Type', ptypeLabel(l.ptype)],
+    ['ruler', 'Area', areaText(l.area)],
+    ['bed', 'Bedrooms', isNum(l.bedrooms) ? String(l.bedrooms) : '—'],
+    ['bath', 'Bathrooms', isNum(l.bathrooms) ? String(l.bathrooms) : '—'],
+    ['tag', 'Type', ptypeLabel(l.ptype)],
   ];
 
   view.innerHTML = `
     <div class="c-backrow">
-      <button class="btn btn--ghost" id="back">← All properties</button>
+      <button class="btn btn--ghost" id="back">${icon('arrowLeft')}<span>All properties</span></button>
       <div class="c-backrow__tools">
         ${favButton(l, { big: true })}
         ${compareButton(l, { big: true })}
-        <button class="c-iconbtn" id="share" style="width:46px;height:46px;font-size:19px" title="Share this property" aria-label="Share this property">📤</button>
+        <button class="c-iconbtn c-iconbtn--lg" id="share" title="Share this property" aria-label="Share this property">${icon('share')}</button>
       </div>
     </div>
 
@@ -75,13 +77,13 @@ export async function pageProperty(view, code) {
           <div class="c-titlerow">
             <div style="min-width:0">
               <div class="row row--wrap" style="gap:8px;margin-bottom:8px">
-                <span class="badge ${l.type === 'rent' ? 'badge--reserved' : 'badge--available'}">${esc(dealTypeLabel(l.type))}</span>
-                ${l.status === 'reserved' ? '<span class="badge badge--sold">Reserved</span>' : ''}
-                ${l.featured ? '<span class="badge badge--featured">★ Featured</span>' : ''}
+                <span class="c-tagpill c-tagpill--${esc(purposeOf(l))}">${esc(PURPOSE_META[purposeOf(l)]?.label || dealTypeLabel(l.type))}</span>
+                ${l.status === 'reserved' ? '<span class="c-tagpill c-tagpill--reserved">Reserved</span>' : ''}
+                ${l.featured ? `<span class="c-tagpill c-tagpill--featured">${icon('starFilled', 'ic--xs')} Featured</span>` : ''}
                 <span class="badge badge--role">ID ${esc(l.code || l.id)}</span>
               </div>
               <h1>${esc(l.title || 'Property')}</h1>
-              <div class="muted small" style="margin-top:6px">📍 ${esc(locationText(l))}</div>
+              <div class="c-detail__loc">${icon('pin', 'ic--sm')}${esc(locationText(l))}</div>
             </div>
             <div>
               <div class="c-price money">${esc(money(l.price))}</div>
@@ -91,7 +93,7 @@ export async function pageProperty(view, code) {
           <div class="c-facts" style="margin-top:18px">
             ${facts.map(([ic, k, v]) => `
               <div class="c-fact">
-                <div class="c-fact__ic" aria-hidden="true">${ic}</div>
+                <div class="c-fact__ic" aria-hidden="true">${icon(ic)}</div>
                 <div class="c-fact__v">${esc(v)}</div>
                 <div class="c-fact__k">${esc(k)}</div>
               </div>`).join('')}
@@ -131,7 +133,7 @@ export async function pageProperty(view, code) {
         ${amenities.length ? `
         <div class="card">
           <h2 style="margin-bottom:12px">Amenities</h2>
-          <div class="c-amenities">${amenities.map(a => `<span>✓ ${esc(amenityLabel(a))}</span>`).join('')}</div>
+          <div class="c-amenities">${amenities.map(a => `<span>${icon('check', 'ic--sm')}${esc(amenityLabel(a))}</span>`).join('')}</div>
         </div>` : ''}
 
         ${hasMap ? `
@@ -140,7 +142,7 @@ export async function pageProperty(view, code) {
             src="https://maps.google.com/maps?q=${encodeURIComponent(l.lat + ',' + l.lng)}&z=14&output=embed"></iframe>
           <div style="padding:12px 16px">
             <a class="btn btn--ghost btn--sm" target="_blank" rel="noopener"
-               href="https://maps.google.com/?q=${encodeURIComponent(l.lat + ',' + l.lng)}">📍 Open in Maps</a>
+               href="https://maps.google.com/?q=${encodeURIComponent(l.lat + ',' + l.lng)}">${icon('map', 'ic--sm')} Open in Maps</a>
           </div>
         </div>` : ''}
       </div>
@@ -160,11 +162,11 @@ export async function pageProperty(view, code) {
           </div>
           <div class="c-cta" style="margin-top:16px">
             ${wa
-              ? `<a class="btn btn--wa" id="wa" href="${esc(wa)}" target="_blank" rel="noopener">💬 Contact on WhatsApp</a>`
+              ? `<a class="btn btn--wa" id="wa" href="${esc(wa)}" target="_blank" rel="noopener">${icon('whatsapp')} Contact on WhatsApp</a>`
               : `<button class="btn btn--wa" disabled aria-disabled="true"
-                   title="WhatsApp contact is not available.">💬 Contact on WhatsApp</button>`}
-            <button class="btn btn--primary" id="req">📩 Request Details</button>
-            ${l.agent_phone ? `<a class="btn btn--outline" href="tel:${esc(String(l.agent_phone).replace(/\s/g, ''))}">📞 Call agent</a>` : ''}
+                   title="WhatsApp contact is not available.">${icon('whatsapp')} Contact on WhatsApp</button>`}
+            <button class="btn btn--primary" id="req">${icon('send')} Request Details</button>
+            ${l.agent_phone ? `<a class="btn btn--outline" href="tel:${esc(String(l.agent_phone).replace(/\s/g, ''))}">${icon('phone')} Call agent</a>` : ''}
           </div>
           <p class="xs muted" style="margin-top:12px">${wa
             ? "Your message is filled in automatically with this property's details — just press send."
@@ -174,7 +176,7 @@ export async function pageProperty(view, code) {
         <div class="card">
           <h3 style="margin-bottom:12px">Share this property</h3>
           <div class="row" style="gap:8px">
-            <button class="btn btn--outline grow" id="share2">📤 Share link</button>
+            <button class="btn btn--outline grow" id="share2">${icon('share')} Share link</button>
           </div>
           <div class="xs muted" style="margin-top:10px;word-break:break-all" dir="ltr">${esc(propertyUrl(l))}</div>
         </div>
@@ -187,8 +189,8 @@ export async function pageProperty(view, code) {
     </div>
 
     <div class="c-stickybar">
-      ${wa ? `<a class="btn btn--wa" href="${esc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
-      <button class="btn btn--primary" id="req2">📩 Request Details</button>
+      ${wa ? `<a class="btn btn--wa" href="${esc(wa)}" target="_blank" rel="noopener">${icon('whatsapp')} WhatsApp</a>` : ''}
+      <button class="btn btn--primary" id="req2">${icon('send')} Request Details</button>
     </div>`;
 
   view.querySelector('#gal').appendChild(gallery(l.images, l.title || 'Property'));

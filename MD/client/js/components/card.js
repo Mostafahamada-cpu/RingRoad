@@ -1,5 +1,7 @@
 // Public property card + the shared favorite / compare click handling.
-import { esc, compactMoney, groupNum, ptypeLabel, dealTypeLabel, finishingLabel, shortLocation, priceSuffix, isNum } from '../lib/format.js';
+import { esc, compactMoney, groupNum, ptypeLabel, finishingLabel, shortLocation, priceSuffix, isNum } from '../lib/format.js';
+import { icon } from '../lib/icons.js';
+import { purposeOf, PURPOSE_META } from '../lib/purpose.js';
 import { coverUrl } from '../lib/api.js';
 import { hrefFor } from '../lib/router.js';
 import { isFavorite, toggleFavorite, inCompare, toggleCompare } from '../lib/store.js';
@@ -9,51 +11,60 @@ import { MAX_COMPARE } from '../config.js';
 
 export function favButton(l, { big = false } = {}) {
   const on = isFavorite(l);
-  return `<button class="c-iconbtn c-iconbtn--fav ${on ? 'is-on' : ''}" data-fav="${esc(l.code || l.id)}"
-    ${big ? 'style="width:46px;height:46px;font-size:19px"' : ''}
+  return `<button class="c-iconbtn c-iconbtn--fav ${on ? 'is-on' : ''} ${big ? 'c-iconbtn--lg' : ''}"
+    data-fav="${esc(l.code || l.id)}"
     aria-pressed="${on}" aria-label="${on ? 'Remove from favorites' : 'Save to favorites'}"
-    title="${on ? 'Saved' : 'Save to favorites'}">${on ? '❤️' : '🤍'}</button>`;
+    title="${on ? 'Saved' : 'Save to favorites'}">${icon(on ? 'heartFilled' : 'heart')}</button>`;
 }
 
 export function compareButton(l, { big = false } = {}) {
   const on = inCompare(l);
-  return `<button class="c-iconbtn ${on ? 'is-on' : ''}" data-cmp="${esc(l.code || l.id)}"
-    ${big ? 'style="width:46px;height:46px;font-size:19px"' : ''}
+  return `<button class="c-iconbtn ${on ? 'is-on' : ''} ${big ? 'c-iconbtn--lg' : ''}"
+    data-cmp="${esc(l.code || l.id)}"
     aria-pressed="${on}" aria-label="${on ? 'Remove from comparison' : 'Add to comparison'}"
-    title="${on ? 'In comparison' : 'Add to compare'}">⚖️</button>`;
+    title="${on ? 'In comparison' : 'Add to compare'}">${icon('scale')}</button>`;
 }
 
 export function propertyCard(l) {
   const cover = coverUrl(l);
   const href = hrefFor({ name: 'property', code: l.code || l.id });
   const fin = finishingLabel(l.finishing);
+  const purpose = purposeOf(l);
+  const meta = (rows) => rows.filter(Boolean).join('');
   return `
     <article class="ccard">
       <div class="ccard__media">
         ${cover
           ? `<img class="img-fade" src="${esc(cover)}" loading="lazy" decoding="async"
                onload="this.classList.add('is-loaded')" alt="${esc(l.title || 'Property')}">`
-          : '<div class="ccard__ph">🏛️</div>'}
+          : `<div class="ccard__ph">${icon('image', 'ic--xl')}</div>`}
         <a class="ccard__link" href="${esc(href)}" data-route="property" data-code="${esc(l.code || l.id)}"
            aria-label="${esc(l.title || 'Property')}"></a>
         <div class="ccard__tags">
-          <span class="badge ${l.type === 'rent' ? 'badge--reserved' : 'badge--available'}">${esc(dealTypeLabel(l.type))}</span>
-          ${l.status === 'reserved' ? '<span class="badge badge--sold">Reserved</span>' : ''}
-          ${l.featured ? '<span class="badge badge--featured">★ Featured</span>' : ''}
+          <span class="c-tagpill c-tagpill--${esc(purpose)}">${esc(PURPOSE_META[purpose]?.label || '')}</span>
+          ${l.status === 'reserved' ? '<span class="c-tagpill c-tagpill--reserved">Reserved</span>' : ''}
+          ${l.featured ? `<span class="c-tagpill c-tagpill--featured">${icon('starFilled', 'ic--xs')} Featured</span>` : ''}
         </div>
         <div class="ccard__tools">${favButton(l)}${compareButton(l)}</div>
-        <span class="ccard__id">${esc(l.code || '')}</span>
+        ${l.code ? `<span class="ccard__id">${esc(l.code)}</span>` : ''}
       </div>
       <div class="ccard__body">
-        <div class="ccard__price money">${esc(compactMoney(l.price))} <small>${esc(priceSuffix(l))}</small></div>
+        <div class="ccard__pricerow">
+          <span class="ccard__price money">${esc(compactMoney(l.price))}</span>
+          ${priceSuffix(l) ? `<small class="ccard__per">${esc(priceSuffix(l))}</small>` : ''}
+        </div>
         <h3 class="ccard__title"><a href="${esc(href)}" data-route="property" data-code="${esc(l.code || l.id)}">${esc(l.title || 'Property')}</a></h3>
-        <div class="ccard__loc">📍 ${esc(shortLocation(l))}${l.project ? ' · ' + esc(l.project) : ''}</div>
+        <div class="ccard__loc">${icon('pin', 'ic--sm')}<span>${esc(shortLocation(l))}${l.project ? ' · ' + esc(l.project) : ''}</span></div>
         <div class="ccard__meta">
-          <span>🛏 ${esc(isNum(l.bedrooms) ? l.bedrooms : '—')}</span>
-          <span>🛁 ${esc(isNum(l.bathrooms) ? l.bathrooms : '—')}</span>
-          <span>📐 ${esc(isNum(l.area) ? groupNum(l.area) + ' m²' : '—')}</span>
-          <span>🏷️ ${esc(ptypeLabel(l.ptype))}</span>
-          ${fin ? `<span>🎨 ${esc(fin)}</span>` : ''}
+          ${meta([
+            `<span title="Bedrooms">${icon('bed', 'ic--sm')}${esc(isNum(l.bedrooms) ? l.bedrooms : '—')}</span>`,
+            `<span title="Bathrooms">${icon('bath', 'ic--sm')}${esc(isNum(l.bathrooms) ? l.bathrooms : '—')}</span>`,
+            `<span title="Area">${icon('ruler', 'ic--sm')}${esc(isNum(l.area) ? groupNum(l.area) + ' m²' : '—')}</span>`,
+          ])}
+        </div>
+        <div class="ccard__foot">
+          <span class="c-chiplet">${esc(ptypeLabel(l.ptype))}</span>
+          ${fin ? `<span class="c-chiplet">${esc(fin)}</span>` : ''}
         </div>
       </div>
     </article>`;
@@ -92,7 +103,7 @@ export function refreshCardStates(root) {
   root.querySelectorAll('[data-fav]').forEach(b => {
     const on = isFavorite(b.dataset.fav);
     b.classList.toggle('is-on', on);
-    b.textContent = on ? '❤️' : '🤍';
+    b.innerHTML = icon(on ? 'heartFilled' : 'heart');
     b.setAttribute('aria-pressed', String(on));
     b.setAttribute('aria-label', on ? 'Remove from favorites' : 'Save to favorites');
   });

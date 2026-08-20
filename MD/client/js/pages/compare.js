@@ -3,6 +3,7 @@ import {
   esc, money, areaText, groupNum, ptypeLabel, dealTypeLabel, finishingLabel, amenityLabel,
   shortLocation, priceSuffix, pricePerSqm, listOf, isNum,
 } from '../lib/format.js';
+import { icon } from '../lib/icons.js';
 import { loadAll, resolveMany } from '../lib/catalog.js';
 import { compareList, clearCompare, removeFromCompare } from '../lib/store.js';
 import { coverUrl } from '../lib/api.js';
@@ -37,7 +38,7 @@ const ROWS = [
   ['contact', '', (l) => {
     const wa = whatsappLink(l);
     return `<div class="col" style="gap:6px">
-      ${wa ? `<a class="btn btn--wa btn--sm" href="${esc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+      ${wa ? `<a class="btn btn--wa btn--sm" href="${esc(wa)}" target="_blank" rel="noopener">${icon('whatsapp')} WhatsApp</a>` : ''}
       <button class="btn btn--outline btn--sm" data-drop="${esc(l.code || l.id)}">Remove</button>
     </div>`;
   }],
@@ -58,9 +59,9 @@ export async function pageCompare(view) {
 
     if (!rows.length) {
       body.innerHTML = emptyState({
-        icon: '⚖️',
+        icon: 'scale',
         title: 'Nothing to compare yet.',
-        text: `Add up to ${MAX_COMPARE} properties with the ⚖️ button on any property.`,
+        text: `Add up to ${MAX_COMPARE} properties with the compare button on any property.`,
         actionHtml: `<a class="btn btn--primary" href="${esc(hrefFor({ name: 'properties' }))}" data-route="properties">Browse properties</a>`,
       });
       return;
@@ -93,7 +94,7 @@ export async function pageCompare(view) {
                 return `<td class="c-cmp__col">
                   ${cover
                     ? `<img class="c-cmp__thumb" src="${esc(cover)}" loading="lazy" alt="">`
-                    : '<div class="c-cmp__thumb" style="display:flex;align-items:center;justify-content:center;font-size:28px">🏛️</div>'}
+                    : `<div class="c-cmp__thumb c-cmp__thumb--empty">${icon('image')}</div>`}
                   <a class="c-cmp__name" href="${esc(href)}" data-route="property" data-code="${esc(l.code || l.id)}">${esc(l.title || 'Property')}</a>
                   <span class="badge badge--role">${esc(l.code || '')}</span>
                 </td>`;
@@ -125,7 +126,7 @@ export async function pageCompare(view) {
     await loadAll();
     paint();
   } catch (err) {
-    body.innerHTML = emptyState({ icon: '⚠️', title: 'Could not load your comparison', text: err.message });
+    body.innerHTML = emptyState({ icon: 'alert', title: 'Could not load your comparison', text: err.message });
     return;
   }
 

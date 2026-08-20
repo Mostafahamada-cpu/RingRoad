@@ -2,6 +2,7 @@
 // Only the first image is eager; the rest load lazily so a phone on 3G still
 // paints the page fast.
 import { esc } from '../lib/format.js';
+import { icon } from '../lib/icons.js';
 import { imageUrl } from '../lib/api.js';
 
 export function gallery(paths, alt = '') {
@@ -9,7 +10,7 @@ export function gallery(paths, alt = '') {
   const urls = (Array.isArray(paths) ? paths : []).map(imageUrl).filter(Boolean);
 
   if (!urls.length) {
-    el.innerHTML = '<div class="gal"><div class="gal__main" style="display:flex;align-items:center;justify-content:center;font-size:48px">🏛️</div></div>';
+    el.innerHTML = `<div class="gal"><div class="gal__main gal__main--empty">${icon('image', 'ic--xl')}</div></div>`;
     return el;
   }
 

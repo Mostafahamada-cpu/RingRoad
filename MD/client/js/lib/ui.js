@@ -2,15 +2,16 @@
 // Styling comes from platform/css/components.css + client.css, so the public
 // site looks and feels like the rest of Ring Roads.
 import { esc } from './format.js';
+import { icon } from './icons.js';
 
-const ICONS = { success: '✅', error: '⛔', warning: '⚠️', info: 'ℹ️' };
+const TOAST_ICON = { success: 'checkCircle', error: 'ban', warning: 'alert', info: 'info' };
 
 export function toast(msg, type = 'success', ms = 3000) {
   const root = document.getElementById('toast-root');
   if (!root) return;
   const el = document.createElement('div');
   el.className = `toast toast--${type}`;
-  el.innerHTML = `<span>${ICONS[type] || ''}</span><span>${esc(msg)}</span>`;
+  el.innerHTML = `<span class="toast__ic">${icon(TOAST_ICON[type] || 'info')}</span><span>${esc(msg)}</span>`;
   root.appendChild(el);
   setTimeout(() => {
     el.classList.add('is-leaving');
@@ -32,7 +33,7 @@ export function openModal({ title, body, size = '' }) {
   overlay.innerHTML = `
     <div class="modal ${size === 'sm' ? 'modal--sm' : size === 'lg' ? 'modal--lg' : ''}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
       <div class="modal__head"><h2>${esc(title)}</h2>
-        <button class="modal__close" aria-label="Close">×</button></div>
+        <button class="modal__close" aria-label="Close">${icon('close')}</button></div>
       <div class="modal__body"></div>
     </div>`;
   const bodyEl = overlay.querySelector('.modal__body');
@@ -56,8 +57,8 @@ export function openSheet({ title, body, footer }) {
   scrim.className = 'c-sheet-scrim';
   scrim.innerHTML = `
     <div class="c-sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
-      <div class="c-sheet__head"><h2>${esc(title)}</h2>
-        <button class="modal__close" aria-label="Close">×</button></div>
+      <div class="c-sheet__head"><span class="c-sheet__grip" aria-hidden="true"></span><h2>${esc(title)}</h2>
+        <button class="modal__close" aria-label="Close">${icon('close')}</button></div>
       <div class="c-sheet__body"></div>
       <div class="c-sheet__foot"></div>
     </div>`;
@@ -85,9 +86,10 @@ export function skeletonGrid(n = 6) {
     </div>`).join('')}</div>`;
 }
 
-export function emptyState({ icon = '🏛️', title, text = '', actionHtml = '' }) {
+/** `icon` is an icons.js name — the portal no longer renders emoji. */
+export function emptyState({ icon: name = 'building', title, text = '', actionHtml = '' }) {
   return `<div class="c-empty">
-    <div class="c-empty__ic">${icon}</div>
+    <div class="c-empty__ic">${icon(name, 'ic--xl')}</div>
     <h2>${esc(title)}</h2>
     ${text ? `<p>${esc(text)}</p>` : ''}
     ${actionHtml}

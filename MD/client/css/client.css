@@ -87,7 +87,7 @@ body { background: var(--bg); overflow-x: hidden; }
 /* --- Search + toolbar ------------------------------------------------------ */
 .c-toolbar { display: flex; flex-direction: column; gap: var(--s3); margin-bottom: var(--s4); }
 .c-toolbar__row { display: flex; gap: var(--s2); align-items: center; }
-.c-toolbar__row .searchbox { flex: 1; min-width: 0; }
+.c-toolbar__row .c-searchbox { flex: 1; min-width: 0; }
 .c-toolbar .input, .c-toolbar .select { min-height: 44px; }
 .c-filterbtn { position: relative; flex-shrink: 0; min-height: 44px; }
 .c-filterbtn .c-count { position: absolute; top: -6px; inset-inline-end: -6px; background: var(--orange-600); }

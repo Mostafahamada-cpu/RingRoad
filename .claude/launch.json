@@ -25,6 +25,19 @@
       ],
       "port": 8126,
       "url": "http://localhost:8126"
+    },
+    {
+      "name": "rr-client",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8127",
+        "--directory",
+        "MD/client"
+      ],
+      "port": 8127,
+      "url": "http://localhost:8127"
     }
   ]
 }

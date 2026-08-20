@@ -14,7 +14,7 @@ import { SITE_BASE } from '../config.js';
 // correct even when the document URL is a rewritten /property/... path.
 export const APP_DIR = new URL('../../', import.meta.url).pathname;   // e.g. /client/
 
-const ROUTES = ['properties', 'favorites', 'compare', 'property'];
+const ROUTES = ['properties', 'videos', 'favorites', 'compare', 'property'];
 
 let mode = 'hash';
 let listeners = [];

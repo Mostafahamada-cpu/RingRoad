@@ -55,8 +55,19 @@ export const finishingLabel = (v) => FINISHING_LABELS[v] || (v ? TITLECASE(v) : 
 export const amenityLabel = (v) => AMENITY_LABELS[v] || TITLECASE(v);
 export const dealTypeLabel = (v) => (v === 'rent' ? 'For Rent' : 'For Sale');
 
-/** Rent is quoted per month; sale is a one-off figure. */
-export const priceSuffix = (l) => (l?.type === 'rent' ? '/ month' : '');
+/**
+ * Rent is quoted per period; sale is a one-off figure. When the listing records
+ * an explicit rental_period we honour it, otherwise rent defaults to monthly.
+ */
+const PERIOD_SUFFIX = {
+  daily: '/ day', monthly: '/ month', quarterly: '/ quarter',
+  semiannual: '/ 6 months', yearly: '/ year',
+};
+export function priceSuffix(l) {
+  if (l?.type !== 'rent') return '';
+  const p = String(l?.rental_period || '').trim();
+  return PERIOD_SUFFIX[p] || '/ month';
+}
 
 export const listOf = (v) => (Array.isArray(v) ? v : []);
 

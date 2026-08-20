@@ -57,3 +57,41 @@
   --sidebar-w:252px; --topbar-h:64px;
   --ease:cubic-bezier(.22,.8,.32,1);
 }
+
+/* ---------------------------------------------------------------------------
+   CLIENT PORTAL ADDITIONS
+   The block above stays a byte-for-byte copy of platform/css/tokens.css so the
+   two apps keep sharing one design system. These tokens exist only here: the
+   public portal is a storefront, so it runs a slightly larger type scale, a
+   softer elevation ramp and a couple of purpose colours the CRM has no use for.
+   --------------------------------------------------------------------------- */
+:root {
+  /* portal type scale — one step up from the CRM's dense, data-first sizes */
+  --cfs-display:clamp(28px, 4.4vw, 42px);
+  --cfs-h1:clamp(23px, 2.6vw, 30px);
+  --cfs-h2:19px;
+  --cfs-body:15px;
+  --cfs-sm:13.5px;
+  --cfs-xs:12.5px;
+
+  /* quieter, more expensive-feeling elevation */
+  --csh-card:0 1px 2px rgba(67,0,31,.04), 0 6px 20px rgba(67,0,31,.05);
+  --csh-card-hover:0 2px 4px rgba(67,0,31,.05), 0 16px 40px rgba(67,0,31,.10);
+  --csh-pop:0 24px 64px rgba(67,0,31,.16), 0 2px 6px rgba(67,0,31,.06);
+
+  /* hairlines: a touch cooler than --line so large surfaces stay calm */
+  --cline:#EFE6EB;
+  --cline-soft:#F5EEF2;
+
+  /* purpose accents — drawn from the existing brand ramps, no new hues */
+  --purpose-primary:var(--orange-600);
+  --purpose-primary-bg:var(--orange-50);
+  --purpose-resale:var(--burg-700);
+  --purpose-resale-bg:var(--burg-50);
+  --purpose-rent:#7A5A12;
+  --purpose-rent-bg:#FBF3E2;
+
+  --cmax:1240px;
+  --chead-h:68px;
+  --cease:cubic-bezier(.22,.8,.32,1);
+}

@@ -22,7 +22,7 @@ export async function pageFavorites(view) {
 
     if (!rows.length) {
       body.innerHTML = emptyState({
-        icon: '🤍',
+        icon: 'heart',
         title: 'No saved properties yet.',
         text: 'Tap the heart on any property to keep it here.',
         actionHtml: `<a class="btn btn--primary" href="${esc(hrefFor({ name: 'properties' }))}" data-route="properties">Browse properties</a>`,
@@ -49,7 +49,7 @@ export async function pageFavorites(view) {
     await loadAll();
     paint();
   } catch (err) {
-    body.innerHTML = emptyState({ icon: '⚠️', title: 'Could not load your favorites', text: err.message });
+    body.innerHTML = emptyState({ icon: 'alert', title: 'Could not load your favorites', text: err.message });
     return;
   }
 

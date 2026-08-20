@@ -4,8 +4,27 @@
     {
       "name": "attendance-app",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5178", "--directory", "attendance-app"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5178",
+        "--directory",
+        "attendance-app"
+      ],
       "port": 5178
+    },
+    {
+      "name": "rr-run",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8126",
+        "--directory",
+        "MD"
+      ],
+      "port": 8126,
+      "url": "http://localhost:8126"
     }
   ]
 }

@@ -125,24 +125,48 @@ exception when undefined_function then
   raise notice 'set_updated_at() not found - skipping the videos updated_at trigger.';
 end $$;
 
--- ── RLS: unchanged CRM model. Everyone signed in may read; only management and
---    admin may write. (Re-declared here so this file stands alone.)
+-- ── RLS ─────────────────────────────────────────────────────────────────────
+--  Read: everyone signed in, as before.
+--  Write: management/admin for anything, PLUS whoever may edit the property a
+--  video is attached to. That second clause matters — the Videos section lives
+--  on the Edit Property page, which agents use for their own listings, so a
+--  management-only rule would silently block an agent from adding a video to a
+--  property they are allowed to edit. The predicate deliberately mirrors the
+--  "prop upd" policy in platform-schema.sql so the two can never drift apart.
 alter table public.videos enable row level security;
+
+-- Can the caller edit this property? (same rule as the properties UPDATE policy)
+create or replace function public.rrp_can_edit_property(p_property uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.properties p
+     where p.id = p_property
+       and (public.rrp_is_mgmt()
+            or p.agent_id = auth.uid()
+            or (public.rrp_role() = 'leader' and p.team_id = public.rrp_team()))
+  );
+$$;
+grant execute on function public.rrp_can_edit_property(uuid) to authenticated;
 
 drop policy if exists "videos sel" on public.videos;
 create policy "videos sel" on public.videos for select to authenticated using (true);
 
 drop policy if exists "videos ins" on public.videos;
 create policy "videos ins" on public.videos for insert to authenticated
-  with check (public.rrp_is_mgmt());
+  with check (public.rrp_is_mgmt()
+              or (property_id is not null and public.rrp_can_edit_property(property_id)));
 
 drop policy if exists "videos upd" on public.videos;
 create policy "videos upd" on public.videos for update to authenticated
-  using (public.rrp_is_mgmt()) with check (public.rrp_is_mgmt());
+  using (public.rrp_is_mgmt()
+         or (property_id is not null and public.rrp_can_edit_property(property_id)))
+  with check (public.rrp_is_mgmt()
+              or (property_id is not null and public.rrp_can_edit_property(property_id)));
 
 drop policy if exists "videos del" on public.videos;
 create policy "videos del" on public.videos for delete to authenticated
-  using (public.rrp_is_mgmt());
+  using (public.rrp_is_mgmt()
+         or (property_id is not null and public.rrp_can_edit_property(property_id)));
 
 grant select, insert, update, delete on public.videos to authenticated;
 --  anon is deliberately NOT granted on the table. The public reads the view below.
@@ -252,7 +276,39 @@ grant select on public.public_property_videos to anon, authenticated;
 
 
 -- ============================================================================
--- 5. REFRESH THE POSTGREST SCHEMA CACHE
+-- 5. LET THE EXISTING BUCKET ACCEPT VIDEO FILES
+--    The Edit Property page uploads videos to the SAME `platform-images` bucket
+--    the listing photos already use — that is this project's upload setup.
+--    If the bucket was created with an image-only allowed_mime_types list, a
+--    video upload fails with "mime type not supported", so widen it (and raise
+--    the size limit) without disturbing anything else. A NULL list means
+--    "anything goes" and is left alone.
+-- ============================================================================
+do $$
+declare cur text[];
+begin
+  select allowed_mime_types into cur from storage.buckets where id = 'platform-images';
+  if not found then
+    raise notice 'Bucket platform-images not found - skipping mime/size widening.';
+    return;
+  end if;
+  if cur is not null then
+    update storage.buckets
+       set allowed_mime_types = array(
+             select distinct unnest(cur || array['video/mp4','video/webm','video/quicktime']))
+     where id = 'platform-images';
+  end if;
+  -- 200 MB, matching the cap the Edit Property page enforces client-side.
+  update storage.buckets
+     set file_size_limit = greatest(coalesce(file_size_limit, 0), 209715200)
+   where id = 'platform-images';
+exception when others then
+  raise notice 'Could not adjust the platform-images bucket (%). Video uploads may be rejected until its allowed_mime_types include video/mp4.', sqlerrm;
+end $$;
+
+
+-- ============================================================================
+-- 6. REFRESH THE POSTGREST SCHEMA CACHE
 --    Without this, a freshly created table or view keeps returning
 --    PGRST205 "Could not find the table ... in the schema cache" until the API
 --    happens to reload on its own.

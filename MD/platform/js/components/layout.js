@@ -27,7 +27,6 @@ function navModel() {
       { id: 'followups', ic: '📞', label: 'navFollowups', path: 'followups' },
       ...(amTelesales() ? [{ id: 'myapartments', ic: '📇', label: 'tsMyTitle', path: 'my-apartments' }] : []),
       { id: 'leads', ic: '📩', label: 'navLeads', path: 'leads' },
-      { id: 'videos', ic: '🎬', label: 'navVideos', path: 'videos' },
       { id: 'sold', ic: '🤝', label: 'navSold', path: 'sold' },
       ...(isMgmt() || isLeader() ? [{ id: 'archive', ic: '🗄️', label: 'navArchive', path: 'archive' }] : []),
     ]},

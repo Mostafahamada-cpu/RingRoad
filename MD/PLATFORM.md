@@ -52,18 +52,26 @@ arrive from the public site; each one also creates a normal `clients` row so it 
 the existing pipeline. (The backing table is still `property_requests`; `#/requests` remains
 as a redirect so older links keep working.)
 
-## Videos
+## Property videos
 
-A shared video library at **Videos** (`#/videos`). Everyone signed in can browse and play;
-management and admin can add, edit and delete (`can('videos:manage')`, mirrored by RLS in
-`platform-videos.sql`).
+Videos live in exactly one place in the CRM UI: the **Videos** section on the **Edit
+Property** page, directly under Photos. There is no standalone Videos library, no sidebar
+item and no `#/videos` route — it was removed on 2026-08-20 once videos became a property
+of a property.
 
-Each video has a title, description, optional thumbnail, and a source that is either an
-external link (YouTube / Vimeo / a direct file URL) or a file uploaded to the existing
-`platform-images` bucket under `videos/{id}/`. The player picks the right renderer from the
-source — a privacy-friendly `youtube-nocookie` embed, a Vimeo embed, or a native `<video>`
-element. YouTube links fall back to YouTube's own still when no thumbnail is uploaded.
-Deleting a video also removes the storage objects it owned.
+The section offers an *Add Video URL* input (YouTube / Vimeo / direct link), an *Upload
+Video* button (MP4/WebM/MOV, up to 200 MB), and a preview grid with per-video delete,
+styled with the same `.thumb` classes as the Photos grid.
+
+Rows go to `public.videos` with `property_id` set, which is what surfaces them inside that
+property's media gallery on the public client portal (via `public_property_videos`).
+Uploads land in the existing `platform-images` bucket under `videos/<property_id>/` — this
+project has no Cloudinary. Videos commit only on Save, after the property row exists, so
+`property_id` is always valid. Write access follows property edit rights
+(`rrp_can_edit_property`), so agents can manage videos on their own listings.
+
+Schema lives in `platform-client-portal.sql`. `platform-videos.sql` is retired: it created
+the same table with management-only RLS, which would have silently locked agents out.
 
 ## Telesales assignment
 
@@ -110,8 +118,8 @@ fields: sold_date/buyer_name/sold_price/commission) · `tasks` · `events` · `c
 - `platform-telesales.sql` adds `profiles.department`, the `properties.assigned_telesales_id`
   columns, `telesales_assignment_history`, and the `rr_assign_telesales()` /
   `rr_distribute_apartments()` RPCs.
-- `platform-videos.sql` adds the `videos` table behind the **Videos** page: everyone signed in
-  may read it, management + admin may write (mirrors `can('videos:manage')`).
+- `platform-client-portal.sql` owns the `videos` table (columns, `property_id`, RLS) and the
+  `public_property_videos` view. `platform-videos.sql` is a retired no-op stub.
 - `platform-users-import.sql` provisions the 18 accounts from `Attendance-Credentials.pdf`
   (creates only what is missing; never changes an existing password).
 - **Images are real uploads** to the public Storage bucket `platform-images`
@@ -123,7 +131,8 @@ fields: sold_date/buyer_name/sold_price/commission) · `tasks` · `events` · `c
 1. Run `platform-setup.sql` in the Supabase SQL editor (idempotent).
 2. It promotes `ringroad.re@gmail.com` to **admin** — edit §9 first if needed.
 3. Run any feature migrations you want: `platform-client-view.sql`, `platform-telesales.sql`,
-   `platform-videos.sql`. Each is idempotent and additive.
+   `platform-client-portal.sql`. Each is idempotent and additive. (`platform-videos.sql`
+   is retired — `platform-client-portal.sql` supersedes it.)
 4. Open `platform/index.html` (locally: `http://localhost:8123/platform/index.html`).
 5. Sign in; create teams and users from the Users/Teams pages (new users get a temp password
    and can reset via email).

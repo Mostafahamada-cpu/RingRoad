@@ -30,7 +30,8 @@ Properties → Search / Filter / Sort → Property card → Property details
    `purpose` / `down_payment` / `rental_period` columns, a republished `public_listings`
    carrying the derived purpose, the `videos.property_id` relationship, and the
    `public_property_videos` view. It also creates the `videos` table if
-   `platform-videos.sql` has not been run, so the two are order-independent. It ends with
+   `platform-videos.sql` has not been run (that file is now a retired stub), so ordering
+   never matters. It ends with
    `notify pgrst, 'reload schema'` so PostgREST picks the new objects up immediately —
    without that you get `PGRST205 Could not find the table … in the schema cache`.
 2. Deploy. **`client/` is the Vercel project's Root Directory** — the project
@@ -168,13 +169,24 @@ Three gates, all required:
 
 ### Attaching a video
 
-The CRM's Videos page creates library videos (no property). To attach one to a property,
-until a property picker is added to that form:
+In the CRM, open **Properties -> a property -> Edit** and use the **Videos** section
+directly under Photos: paste a YouTube / Vimeo / direct link and press **Add Video**, or
+press **Upload Video** to pick an MP4/WebM/MOV (up to 200 MB). Tiles show a preview with a
+delete button, exactly like the Photos grid. Nothing is written until you press Save — the
+property row is created or updated first, then the videos, so `property_id` always points
+at a real record.
+
+Uploads go to the **same `platform-images` Supabase Storage bucket the photos use**, under
+`videos/<property_id>/`. (There is no Cloudinary in this project.)
+
+Anyone who can edit the property can manage its videos — the `videos` write policies mirror
+the `prop upd` policy, so an agent is not blocked on their own listing.
+
+Equivalent by hand:
 
 ```sql
-insert into public.videos (property_id, title, description, video_url)
-select id, 'Full tour', 'Walkthrough of the apartment',
-       'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+insert into public.videos (property_id, title, video_url)
+select id, 'Full tour', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
   from public.properties where code = 'RR-1014';
 ```
 

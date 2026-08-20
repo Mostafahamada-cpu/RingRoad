@@ -27,8 +27,6 @@ const CAPS = {
   'assign':        () => isMgmt() || isLeader(),
   // system settings (category taxonomy, etc.)
   'settings:system': () => isAdmin(),
-  // video library: everyone may watch, management + admin may add/edit/delete
-  'videos:manage': () => isMgmt(),
 };
 
 /** Returns true if the current user may perform `cap`. Unknown caps → false. */

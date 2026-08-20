@@ -6,6 +6,7 @@ import { store, me, isMgmt, isLeader, myTeamId } from '../lib/store.js';
 import { typeOptions, canEditListing } from '../lib/listings.js';
 import { field, selectField, textareaField, checkField, checkboxGroup, readForm } from '../components/form.js';
 import { createUploader } from '../components/uploader.js';
+import { createVideoEditor, loadPropertyVideos } from '../components/video-uploader.js';
 import { pagehead } from '../components/layout.js';
 import { navigate } from '../lib/router.js';
 import { toast } from '../lib/toast.js';
@@ -19,6 +20,10 @@ export async function pageListingForm(params) {
 
   const el = document.createElement('div');
   const up = createUploader({ existing: Array.isArray(l.images) ? l.images : [] });
+  // Videos live in the shared `videos` table keyed by property_id, so a new
+  // property has none yet and an existing one loads whatever it already has.
+  // null means the table is unreachable — the editor then explains why.
+  const vids = createVideoEditor({ existing: isNew ? [] : await loadPropertyVideos(l.id) });
 
   const agentOpts = store.profiles
     .filter(p => ['agent', 'leader'].includes(p.role) && p.active !== false)
@@ -74,6 +79,10 @@ export async function pageListingForm(params) {
         <div class="card__head"><h3>🖼️ ${esc(t('images'))}</h3></div>
         <div id="up-slot"></div>
       </div>
+      <div class="card">
+        <div class="card__head"><h3>🎥 ${esc(t('videos'))}</h3></div>
+        <div id="vid-slot"></div>
+      </div>
       <div class="row" style="justify-content:flex-end;gap:12px">
         <button type="button" class="btn btn--outline" id="cancel">${esc(t('cancel'))}</button>
         <button type="submit" class="btn btn--primary btn--lg" id="save">💾 ${esc(t('save'))}</button>
@@ -81,6 +90,7 @@ export async function pageListingForm(params) {
     </form>`;
 
   el.querySelector('#up-slot').appendChild(up.el);
+  el.querySelector('#vid-slot').appendChild(vids.el);
   const goBack = () => navigate(isNew ? 'properties' : 'properties/' + params.id);
   el.querySelector('#back').onclick = goBack;
   el.querySelector('#cancel').onclick = goBack;
@@ -134,6 +144,15 @@ export async function pageListingForm(params) {
       }
       if (isNew) await db.create('properties', { id, ...row });
       else await db.update('properties', l.id, row);
+      // Only now does the property exist, so videos.property_id can point at it.
+      // A video failure must not lose the property edit the user just made.
+      try {
+        await vids.commit(id);
+      } catch (vErr) {
+        toast(t('propSaved') + ' — ' + (vErr.message || t('vidSaveFailed')), 'warning', 6000);
+        navigate('properties/' + id);
+        return;
+      }
       toast(t('propSaved'));
       navigate('properties/' + id);
     } catch (err) {

@@ -341,46 +341,34 @@
 @media (max-width:640px){ .fab { display:inline-flex; } }
 
 
-/* --- Videos --------------------------------------------------------------- */
-/* Reuses the existing card / grid / badge system — only the media framing and
-   the player stage are new. */
-.vgrid { align-items:start; }
+/* --- Property videos (Edit Property -> Videos section) --------------------- */
+/* Reuses .thumbs / .thumb from the Photos grid so the two sections read as one
+   system; only the add-controls and the video-specific tile bits are new. */
+.vid-add { display:flex; flex-direction:column; gap:var(--s3); }
+.vid-add__row { display:flex; gap:var(--s2); align-items:center; flex-wrap:wrap; }
+.vid-add__row .input { flex:1; min-width:200px; }
+.vid-add__row .btn { flex:none; }
+.vid-add__or { display:flex; align-items:center; gap:var(--s3); color:var(--muted); font-size:var(--fs-xs); }
+.vid-add__or::before, .vid-add__or::after { content:""; flex:1; height:1px; background:var(--line); }
+.vid-add__upload { align-self:flex-start; }
+.vid-add__hint { margin:0; font-size:var(--fs-xs); color:var(--muted); }
 
-.vcard { cursor:pointer; display:flex; flex-direction:column; }
-.vcard:focus-visible { outline:2px solid var(--orange-600); outline-offset:2px; }
-.vcard__media { position:relative; aspect-ratio:16/9; background:var(--bg-sunken); overflow:hidden; }
-.vcard__media img { width:100%; height:100%; object-fit:cover; display:block; }
-.vcard__ph { display:flex; align-items:center; justify-content:center; height:100%; font-size:34px; }
-.vcard__play { position:absolute; inset:0; margin:auto; width:52px; height:52px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center; font-size:19px; color:var(--burg-700);
-  background:rgba(255,255,255,.9); box-shadow:var(--sh-lg); padding-inline-start:3px;
-  transition:transform .16s var(--ease), background .16s ease; }
-.vcard:hover .vcard__play, .vcard:focus-visible .vcard__play { transform:scale(1.09); background:#fff; }
-.vcard__src { position:absolute; inset-block-start:10px; inset-inline-end:10px;
-  background:rgba(17,17,17,.72); color:#fff; }
-.vcard__body { padding:var(--s3); display:flex; flex-direction:column; gap:6px; }
-.vcard__title { font-weight:800; font-size:var(--fs-body); }
-/* clamp to two lines so cards in a row keep a consistent height */
-.vcard__desc { font-size:var(--fs-sm); color:var(--ink-soft); display:-webkit-box;
-  -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-.vcard__tools { margin-top:4px; }
-
-/* player */
-.vid-stage { position:relative; aspect-ratio:16/9; width:100%; background:#000;
-  border-radius:var(--r-md); overflow:hidden; }
-.vid-player { position:absolute; inset:0; width:100%; height:100%; border:0; display:block; background:#000; }
-
-/* file picker in the add/edit form */
-.vid-file { display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;
-  padding:var(--s4) var(--s3); border:2px dashed var(--line); border-radius:var(--r-md);
-  background:var(--bg-sunken); cursor:pointer; transition:border-color .15s ease, background .15s ease; }
-.vid-file:hover, .vid-file:focus-visible, .vid-file.is-drag { border-color:var(--orange-600); background:var(--orange-50); }
-.vid-file:focus-visible { outline:none; }
-.vid-file.on { border-style:solid; border-color:var(--orange-600); background:var(--orange-50); }
-.vid-file__icon { font-size:24px; }
-.vid-file__name { font-weight:700; font-size:var(--fs-sm); word-break:break-all; }
-
-@media (max-width:640px){
-  .vcard__play { width:44px; height:44px; font-size:16px; }
-  .vcard__desc { -webkit-line-clamp:3; line-clamp:3; }
+.vthumb video, .vthumb img { width:100%; height:100%; object-fit:cover; display:block; background:var(--bg-sunken); }
+.vthumb__ph { display:flex; align-items:center; justify-content:center; height:100%; font-size:26px; }
+.vthumb__kind {
+  position:absolute; top:6px; inset-inline-start:6px; max-width:calc(100% - 12px);
+  padding:2px 7px; border-radius:6px; background:rgba(43,20,32,.72); color:#fff;
+  font-size:9.5px; font-weight:700; letter-spacing:.02em;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+/* a play glyph so a still frame still reads as "video" */
+.vthumb::before {
+  content:"▶"; position:absolute; inset:0; margin:auto; width:30px; height:30px;
+  display:flex; align-items:center; justify-content:center; z-index:1;
+  border-radius:50%; background:rgba(255,255,255,.9); color:var(--burg-700);
+  font-size:11px; padding-inline-start:2px; box-shadow:var(--sh-sm); pointer-events:none;
+}
+.vid-note {
+  margin-bottom:var(--s3); padding:10px 14px; border-radius:var(--r-md);
+  background:var(--warn-bg); color:var(--warn); font-size:var(--fs-sm); font-weight:600; line-height:1.5;
 }

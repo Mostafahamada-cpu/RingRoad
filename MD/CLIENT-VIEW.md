@@ -71,7 +71,7 @@ locks it in. The admin property page shows the code and its public link with a c
 
 ## Where the leads land
 
-**Requests** in the platform sidebar (`#/requests`) — searchable, exportable, with
+**Leads** in the platform sidebar (`#/leads`) — searchable, exportable, with
 `new → contacted → closed`. Each row links to the property and to the CRM client that was
 created alongside it, so the lead is also visible on the existing **Clients** page and flows
 through the normal pipeline. Visibility follows the usual roles: agents see their own,

@@ -47,9 +47,23 @@ Directory `MD/client`), so it ships a synced copy of the design-system CSS and h
 router, state and data layer; the admin workspace is unchanged by it. Run
 `platform-client-view.sql`, then see **CLIENT-VIEW.md**.
 
-Inside the platform this adds one page — **Requests** (`#/requests`) — listing the leads that
+Inside the platform this adds one page — **Leads** (`#/leads`) — listing the enquiries that
 arrive from the public site; each one also creates a normal `clients` row so it flows through
-the existing pipeline.
+the existing pipeline. (The backing table is still `property_requests`; `#/requests` remains
+as a redirect so older links keep working.)
+
+## Videos
+
+A shared video library at **Videos** (`#/videos`). Everyone signed in can browse and play;
+management and admin can add, edit and delete (`can('videos:manage')`, mirrored by RLS in
+`platform-videos.sql`).
+
+Each video has a title, description, optional thumbnail, and a source that is either an
+external link (YouTube / Vimeo / a direct file URL) or a file uploaded to the existing
+`platform-images` bucket under `videos/{id}/`. The player picks the right renderer from the
+source — a privacy-friendly `youtube-nocookie` embed, a Vimeo embed, or a native `<video>`
+element. YouTube links fall back to YouTube's own still when no thumbnail is uploaded.
+Deleting a video also removes the storage objects it owned.
 
 ## Telesales assignment
 
@@ -96,6 +110,8 @@ fields: sold_date/buyer_name/sold_price/commission) · `tasks` · `events` · `c
 - `platform-telesales.sql` adds `profiles.department`, the `properties.assigned_telesales_id`
   columns, `telesales_assignment_history`, and the `rr_assign_telesales()` /
   `rr_distribute_apartments()` RPCs.
+- `platform-videos.sql` adds the `videos` table behind the **Videos** page: everyone signed in
+  may read it, management + admin may write (mirrors `can('videos:manage')`).
 - `platform-users-import.sql` provisions the 18 accounts from `Attendance-Credentials.pdf`
   (creates only what is missing; never changes an existing password).
 - **Images are real uploads** to the public Storage bucket `platform-images`
@@ -106,8 +122,10 @@ fields: sold_date/buyer_name/sold_price/commission) · `tasks` · `events` · `c
 
 1. Run `platform-setup.sql` in the Supabase SQL editor (idempotent).
 2. It promotes `ringroad.re@gmail.com` to **admin** — edit §9 first if needed.
-3. Open `platform/index.html` (locally: `http://localhost:8123/platform/index.html`).
-4. Sign in; create teams and users from the Users/Teams pages (new users get a temp password
+3. Run any feature migrations you want: `platform-client-view.sql`, `platform-telesales.sql`,
+   `platform-videos.sql`. Each is idempotent and additive.
+4. Open `platform/index.html` (locally: `http://localhost:8123/platform/index.html`).
+5. Sign in; create teams and users from the Users/Teams pages (new users get a temp password
    and can reset via email).
 
 ## Design system notes

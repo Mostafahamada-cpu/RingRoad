@@ -1,7 +1,11 @@
-// Property requests — the "Request details" leads filed from the public client
-// view (client/). Read-only inbox with a status workflow; the matching CRM
-// client row is created server-side by rr_submit_property_request(), so every
-// request also shows up on the Clients page.
+// Leads — the "Request details" enquiries filed from the public client view
+// (client/). Read-only inbox with a status workflow; the matching CRM client
+// row is created server-side by rr_submit_property_request(), so every lead
+// also shows up on the Clients page.
+//
+// NOTE: this is a UI rename only. The backing table is still
+// public.property_requests and the RPC is still rr_submit_property_request(),
+// so existing data and the public client view keep working untouched.
 //
 // Visibility follows the same rules as the rest of the CRM (RLS enforces it):
 // agent → own, leader → own team, management/admin → everything.
@@ -16,7 +20,7 @@ import { pagehead } from '../components/layout.js';
 import { navigate, render as rerender } from '../lib/router.js';
 import { toast } from '../lib/toast.js';
 
-export const loadRequests = () =>
+export const loadLeads = () =>
   db.list('property_requests', 'select=*&order=created_at.desc').catch(() => []);
 
 const STATUS_BADGE = { new: 'badge--pending', contacted: 'badge--approved', closed: 'badge--muted' };
@@ -27,10 +31,10 @@ const when = (ts) => {
   return isNaN(d) ? fmtDate(ts) : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 };
 
-function openRequest(r, onDone) {
+function openLead(r, onDone) {
   const agent = profileById(r.agent_id);
   const { el, close } = openModal({
-    title: t('reqTitleOne'),
+    title: t('leadTitleOne'),
     body: `
       <div class="col" style="gap:14px">
         <div class="row">
@@ -41,7 +45,7 @@ function openRequest(r, onDone) {
           </div>
         </div>
         ${r.message ? `<div class="card" style="background:var(--bg);box-shadow:none">
-          <div class="xs muted" style="margin-bottom:4px">${esc(t('reqMessage'))}</div>
+          <div class="xs muted" style="margin-bottom:4px">${esc(t('leadMessage'))}</div>
           <div class="small" style="white-space:pre-wrap">${esc(r.message)}</div></div>` : ''}
         <div class="col" style="gap:8px">
           <div class="row row--between small"><span class="muted">${esc(t('linkedProperty'))}</span>
@@ -50,9 +54,9 @@ function openRequest(r, onDone) {
             <b dir="ltr">${esc(r.property_code || '—')}</b></div>
           <div class="row row--between small"><span class="muted">${esc(t('agentInfo'))}</span>
             <b>${esc(agent?.name || agent?.email || '—')}</b></div>
-          <div class="row row--between small"><span class="muted">${esc(t('reqSource'))}</span>
-            <b>${esc(r.source === 'client_view' ? t('reqSourceClient') : (r.source || '—'))}</b></div>
-          <div class="row row--between small"><span class="muted">${esc(t('reqReceived'))}</span>
+          <div class="row row--between small"><span class="muted">${esc(t('leadSource'))}</span>
+            <b>${esc(r.source === 'client_view' ? t('leadSourceClient') : (r.source || '—'))}</b></div>
+          <div class="row row--between small"><span class="muted">${esc(t('leadReceived'))}</span>
             <b>${esc(when(r.created_at))}</b></div>
         </div>
         <div class="row row--wrap" style="gap:8px">
@@ -62,9 +66,9 @@ function openRequest(r, onDone) {
         </div>
         <div class="modal__actions">
           ${can('delete:core') ? `<button class="btn btn--danger" data-del style="margin-inline-end:auto">🗑️ ${esc(t('del'))}</button>` : ''}
-          ${r.status !== 'contacted' ? `<button class="btn btn--outline" data-st="contacted">${esc(t('reqMarkContacted'))}</button>` : ''}
-          ${r.status !== 'closed' ? `<button class="btn btn--primary" data-st="closed">${esc(t('reqMarkClosed'))}</button>` : ''}
-          ${r.status !== 'new' ? `<button class="btn btn--ghost" data-st="new">${esc(t('reqReopen'))}</button>` : ''}
+          ${r.status !== 'contacted' ? `<button class="btn btn--outline" data-st="contacted">${esc(t('leadMarkContacted'))}</button>` : ''}
+          ${r.status !== 'closed' ? `<button class="btn btn--primary" data-st="closed">${esc(t('leadMarkClosed'))}</button>` : ''}
+          ${r.status !== 'new' ? `<button class="btn btn--ghost" data-st="new">${esc(t('leadReopen'))}</button>` : ''}
         </div>
       </div>`,
   });
@@ -78,7 +82,7 @@ function openRequest(r, onDone) {
     } catch (err) { toast(err.message, 'error'); }
   });
   el.querySelector('[data-del]')?.addEventListener('click', async () => {
-    if (!(await confirmDlg({ message: t('confirmDeleteRequest') }))) return;
+    if (!(await confirmDlg({ message: t('confirmDeleteLead') }))) return;
     try {
       await db.remove('property_requests', r.id);
       close(); toast(t('deleted')); onDone();
@@ -86,19 +90,19 @@ function openRequest(r, onDone) {
   });
 }
 
-export async function pageRequests() {
-  const rows = await loadRequests();
+export async function pageLeads() {
+  const rows = await loadLeads();
   const el = document.createElement('div');
   const fresh = rows.filter(r => r.status === 'new').length;
 
-  el.innerHTML = `${pagehead(t('reqTitle'), t('reqSub'),
-    fresh ? `<span class="badge badge--pending">⏳ ${fresh} ${esc(t('reqNew'))}</span>` : '')}<div id="tbl"></div>`;
+  el.innerHTML = `${pagehead(t('leadTitle'), t('leadSub'),
+    fresh ? `<span class="badge badge--pending">⏳ ${fresh} ${esc(t('leadNew'))}</span>` : '')}<div id="tbl"></div>`;
 
   el.querySelector('#tbl').appendChild(dataTable({
     rows,
-    exportName: 'property-requests',
-    emptyText: t('noRequests'),
-    onRowClick: (r) => openRequest(r, rerender),
+    exportName: 'leads',
+    emptyText: t('noLeads'),
+    onRowClick: (r) => openLead(r, rerender),
     searchable: (r, q) => [r.name, r.phone, r.property_code, r.property_title, r.message]
       .filter(Boolean).join(' ').toLowerCase().includes(q),
     columns: [
@@ -110,16 +114,16 @@ export async function pageRequests() {
         render: r => `<b dir="ltr">${esc(r.property_code || '—')}</b>` },
       { key: 'property_title', label: t('linkedProperty'), sortable: true,
         render: r => esc(r.property_title || '—') },
-      { key: 'message', label: t('reqMessage'),
+      { key: 'message', label: t('leadMessage'),
         render: r => `<span class="truncate" style="display:block;max-width:220px">${esc(r.message || '—')}</span>`,
         csv: r => r.message || '' },
       { key: 'agent_id', label: t('agentInfo'),
         render: r => esc(profileById(r.agent_id)?.name || '—'),
         csv: r => profileById(r.agent_id)?.name || '' },
-      { key: 'created_at', label: t('reqReceived'), sortable: true,
+      { key: 'created_at', label: t('leadReceived'), sortable: true,
         render: r => `<span class="xs">${esc(when(r.created_at))}</span>`, csv: r => r.created_at },
       { key: 'status', label: t('status'), sortable: true,
-        render: r => `<span class="badge ${STATUS_BADGE[r.status] || 'badge--muted'}">${esc(t('reqSt_' + r.status) || r.status)}</span>`,
+        render: r => `<span class="badge ${STATUS_BADGE[r.status] || 'badge--muted'}">${esc(t('leadSt_' + r.status) || r.status)}</span>`,
         csv: r => r.status },
     ],
   }));

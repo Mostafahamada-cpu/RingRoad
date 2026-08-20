@@ -21,13 +21,13 @@ function navModel() {
   return [
     { label: 'secWorkspace', items: [
       { id: 'dashboard', ic: '📊', label: 'navDashboard', path: 'dashboard' },
-      { id: 'attendance', ic: '🕒', label: 'navAttendance', path: 'attendance' },
       { id: 'properties', ic: '🏛️', label: 'navProperties', path: 'properties' },
       { id: 'clients', ic: '👤', label: 'navClients', path: 'clients' },
       { id: 'deals', ic: '📈', label: 'navDeals', path: 'deals' },
       { id: 'followups', ic: '📞', label: 'navFollowups', path: 'followups' },
       ...(amTelesales() ? [{ id: 'myapartments', ic: '📇', label: 'tsMyTitle', path: 'my-apartments' }] : []),
-      { id: 'requests', ic: '📩', label: 'navRequests', path: 'requests' },
+      { id: 'leads', ic: '📩', label: 'navLeads', path: 'leads' },
+      { id: 'videos', ic: '🎬', label: 'navVideos', path: 'videos' },
       { id: 'sold', ic: '🤝', label: 'navSold', path: 'sold' },
       ...(isMgmt() || isLeader() ? [{ id: 'archive', ic: '🗄️', label: 'navArchive', path: 'archive' }] : []),
     ]},

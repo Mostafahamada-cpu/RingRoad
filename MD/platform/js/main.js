@@ -10,12 +10,12 @@ import { toast } from './lib/toast.js';
 import { initUi } from './lib/ui.js';
 
 import { pageDashboard } from './pages/dashboard.js';
-import { pageAttendance } from './pages/attendance.js';
 import { pageListings } from './pages/listings.js';
 import { pageClients } from './pages/clients.js';
 import { pageDeals } from './pages/deals.js';
 import { pageFollowups } from './pages/followups.js';
-import { pageRequests } from './pages/requests.js';
+import { pageLeads } from './pages/leads.js';
+import { pageVideos } from './pages/videos.js';
 import { pageTelesales } from './pages/telesales.js';
 import { pageMyApartments } from './pages/my-apartments.js';
 import { pageListingForm } from './pages/listing-form.js';
@@ -60,7 +60,6 @@ async function enterApp() {
 
   defineRoutes([
     { path: 'dashboard', page: pageDashboard, nav: 'dashboard', title: 'navDashboard' },
-    { path: 'attendance', page: pageAttendance, nav: 'attendance', title: 'navAttendance' },
     { path: 'properties', page: pageListings, nav: 'properties', title: 'navProperties' },
     { path: 'properties/new', page: (p) => pageListingForm({ id: 'new' }), nav: 'properties', title: 'addProperty' },
     { path: 'properties/:id', page: pageListingDetail, nav: 'properties', title: 'navProperties' },
@@ -68,7 +67,11 @@ async function enterApp() {
     { path: 'clients', page: pageClients, nav: 'clients', title: 'navClients' },
     { path: 'deals', page: pageDeals, nav: 'deals', title: 'navDeals' },
     { path: 'followups', page: pageFollowups, nav: 'followups', title: 'navFollowups' },
-    { path: 'requests', page: pageRequests, nav: 'requests', title: 'reqTitle' },
+    { path: 'leads', page: pageLeads, nav: 'leads', title: 'leadTitle' },
+    // Legacy path kept as a redirect so old bookmarks and links still resolve.
+    { path: 'requests', page: async () => { navigate('leads'); return document.createElement('div'); },
+      nav: 'leads', title: 'leadTitle' },
+    { path: 'videos', page: pageVideos, nav: 'videos', title: 'vidTitle' },
     { path: 'my-apartments', page: pageMyApartments, nav: 'myapartments', title: 'tsMyTitle', guard: amTelesales },
     { path: 'telesales', page: pageTelesales, nav: 'telesales', title: 'tsTitle', guard: isMgmt },
     { path: 'sold', page: pageSold, nav: 'sold', title: 'navSold' },

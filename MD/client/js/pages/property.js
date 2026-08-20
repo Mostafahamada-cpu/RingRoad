@@ -9,6 +9,7 @@ import { getOne, all, loadAll } from '../lib/catalog.js';
 import { imageUrl, submitRequest } from '../lib/api.js';
 import { emptyState, openModal, toast } from '../lib/ui.js';
 import { gallery } from '../components/gallery.js';
+import { loadPropertyVideos } from '../lib/videos.js';
 import { favButton, compareButton, cardGrid, refreshCardStates } from '../components/card.js';
 import { hrefFor, goProperties } from '../lib/router.js';
 import { whatsappLink, shareProperty, propertyUrl } from '../lib/contact.js';
@@ -193,7 +194,15 @@ export async function pageProperty(view, code) {
       <button class="btn btn--primary" id="req2">${icon('send')} Request Details</button>
     </div>`;
 
-  view.querySelector('#gal').appendChild(gallery(l.images, l.title || 'Property'));
+  // Photos paint immediately; the property's video is folded into the same
+  // media strip as soon as it resolves, so a slow video lookup never delays the
+  // page (and a missing one simply leaves the gallery as images only).
+  const galHost = view.querySelector('#gal');
+  galHost.appendChild(gallery(l.images, l.title || 'Property'));
+  loadPropertyVideos(l.id, l.code).then(videos => {
+    if (!videos.length || !galHost.isConnected) return;
+    galHost.replaceChildren(gallery(l.images, l.title || 'Property', videos));
+  });
   view.querySelector('#back').onclick = () => goProperties();
   view.querySelector('#share').onclick = () => shareProperty(l);
   view.querySelector('#share2').onclick = () => shareProperty(l);

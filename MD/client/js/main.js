@@ -10,7 +10,6 @@ import { bindCardActions, refreshCardStates } from './components/card.js';
 import { emptyState } from './lib/ui.js';
 import { setPurpose } from './components/filters.js';
 import { pageProperties } from './pages/properties.js';
-import { pageVideos } from './pages/videos.js';
 import { pageProperty } from './pages/property.js';
 import { pageFavorites } from './pages/favorites.js';
 import { pageCompare } from './pages/compare.js';
@@ -19,7 +18,6 @@ const BASE_TITLE = 'Ring Roads — Properties';
 const BASE_DESC = 'Browse apartments, villas and compounds for sale and rent with Ring Roads.';
 const TITLES = {
   properties: BASE_TITLE,
-  videos: 'Ring Roads — Videos',
   favorites: 'Ring Roads — Saved properties',
   compare: 'Ring Roads — Compare properties',
 };
@@ -39,7 +37,6 @@ async function render(route) {
 
   try {
     if (route.name === 'property') await pageProperty(view, route.code);
-    else if (route.name === 'videos') await pageVideos(view);
     else if (route.name === 'favorites') await pageFavorites(view);
     else if (route.name === 'compare') await pageCompare(view);
     else await pageProperties(view);

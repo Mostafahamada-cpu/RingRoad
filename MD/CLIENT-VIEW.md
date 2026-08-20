@@ -28,11 +28,11 @@ Properties → Search / Filter / Sort → Property card → Property details
 
    `platform-client-portal.sql` then adds the portal's own pieces: the optional
    `purpose` / `down_payment` / `rental_period` columns, a republished `public_listings`
-   carrying the derived purpose, and the `public_videos` view. **Videos are not published
-   by default** — flip `videos.is_public` for the ones the public should see:
-   ```sql
-   update public.videos set is_public = true;   -- or a WHERE clause
-   ```
+   carrying the derived purpose, the `videos.property_id` relationship, and the
+   `public_property_videos` view. It also creates the `videos` table if
+   `platform-videos.sql` has not been run, so the two are order-independent. It ends with
+   `notify pgrst, 'reload schema'` so PostgREST picks the new objects up immediately —
+   without that you get `PGRST205 Could not find the table … in the schema cache`.
 2. Deploy. **`client/` is the Vercel project's Root Directory** — the project
    `ring-road-client` is configured that way, so `https://<host>/` serves
    `client/index.html` directly. `client/vercel.json` (which must live in that root to be
@@ -131,14 +131,54 @@ dialog on desktop, shows a live "Show N properties" count as you edit, and only 
 apply. Active filters appear as removable chips with a **Reset all** action, and the filter
 state survives opening a property and coming back.
 
-## Videos
+## Property videos
 
-**Videos** in the header and tab bar. It reads the same `videos` table the CRM writes to —
-there is no second video system — through the `public_videos` view, which exposes only rows
-flagged `is_public`. Nothing is published by default: see `platform-client-portal.sql` for
-the one-line update that publishes them. Cards show the thumbnail (falling back to
-YouTube's own still), title and description; playback opens in a modal that picks the right
-renderer per source — a `youtube-nocookie` embed, a Vimeo embed, or a native `<video>`.
+A video belongs to a **property** — the portal has no standalone video section and no
+Videos navigation item. It reads the **same `videos` table the CRM writes to** (there is no
+second video system) through the `public_property_videos` view.
+
+**Where it appears.** Inside the property's own media gallery, as a slide directly after
+the cover photo: a poster with a play button and the video's title, plus a play badge on
+its thumbnail in the strip. Clicking it opens a player modal. Photos still open the
+lightbox; the two never get confused.
+
+**Sources** are detected per row and rendered with the right player:
+
+| stored as | player |
+| --- | --- |
+| `video_url` matching YouTube | `youtube-nocookie` iframe |
+| `video_url` matching Vimeo | `player.vimeo.com` iframe |
+| any other `video_url` | native `<video controls>` |
+| `video_path` (storage object) | native `<video controls>`, with the thumbnail as poster |
+
+A YouTube video with no uploaded thumbnail falls back to YouTube's own still.
+
+### How a video is exposed to the public
+
+Three gates, all required:
+
+1. `videos.property_id` is not null — CRM **library** videos have no property and can never
+   appear on the portal, whatever else is set.
+2. The property is visible in `public_listings` — so unpublishing, reserving, selling or
+   archiving a property removes its video from the portal automatically.
+3. `videos.is_public` is true. It defaults to true because attaching a video to a published
+   listing is already the act of intent; the flag exists as a kill switch, not a second hoop.
+
+`anon` has **no grant on `videos` itself** — only on the view.
+
+### Attaching a video
+
+The CRM's Videos page creates library videos (no property). To attach one to a property,
+until a property picker is added to that form:
+
+```sql
+insert into public.videos (property_id, title, description, video_url)
+select id, 'Full tour', 'Walkthrough of the apartment',
+       'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+  from public.properties where code = 'RR-1014';
+```
+
+Take one off the portal without deleting it: `update public.videos set is_public = false where id = '…';`
 
 ## Favorites & compare
 
@@ -207,7 +247,7 @@ client/
   css/base.css              synced copy of platform/css/base.css
   css/components.css        synced copy of platform/css/components.css
   css/client.css            public-view components on top of that design system
-  css/premium.css           premium pass: type, elevation, icons, mega-menu, videos
+  css/premium.css           premium pass: type, elevation, icons, mega-menu, property media
   js/
     config.js               Supabase keys (mirrored from platform/js/config.js) + constants
     main.js                 boot: router → shell → route
@@ -220,8 +260,9 @@ client/
       format.js             money, area, price per m², domain labels
       icons.js              inline SVG icon set (the portal renders no emoji)
       purpose.js            Resale/Primary/Rent taxonomy + per-purpose filter fields
-      videos.js             public_videos reads + source resolution (YouTube/Vimeo/file)
+      videos.js             per-property video reads + source resolution (YouTube/Vimeo/file)
       ui.js                 toasts, modal, bottom sheet, skeletons, empty states
-    components/             shell (header/tab bar/compare tray), card, filters, gallery
-    pages/                  properties, property, videos, favorites, compare
+    components/             shell (header/tab bar/compare tray), card, filters,
+                            gallery (photos + the property's video, player modal)
+    pages/                  properties, property, favorites, compare
 ```

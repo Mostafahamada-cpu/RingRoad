@@ -10,7 +10,6 @@ import { all as allListings, isLoaded } from '../lib/catalog.js';
 
 const TABS = [
   { name: 'properties', ic: 'building', label: 'Properties', mega: true },
-  { name: 'videos', ic: 'film', label: 'Videos' },
   { name: 'favorites', ic: 'heart', label: 'Favorites', count: favCount },
   { name: 'compare', ic: 'scale', label: 'Compare', count: compareCount },
 ];
